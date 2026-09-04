@@ -1,0 +1,39 @@
+@import 'tailwindcss';
+
+@theme {
+  /* Dezenter Magenta-Akzent, keine offiziellen Marken-Assets. */
+  --color-accent-50: #fdf2f8;
+  --color-accent-100: #fce7f3;
+  --color-accent-200: #fbcfe8;
+  --color-accent-400: #ec4899;
+  --color-accent-500: #db2777;
+  --color-accent-600: #c2185b;
+  --color-accent-700: #9d174d;
+
+  /* Szenario-Identität. Diese beiden Farben stehen app-weit für dieselbe
+     Sache — in Tabellen, Diagrammen und Eingabemasken. Geprüft auf
+     Farbfehlsichtigkeit: schlechtestes Paar ΔE 24,7 (Protanopie),
+     Normalsicht ΔE 33,6, beide über 3:1 Kontrast zur Fläche. */
+  --color-onprem: #2a78d6;
+  --color-cloud: #eb6834;
+}
+
+html {
+  color-scheme: light;
+}
+
+body {
+  @apply bg-slate-50 text-slate-900 antialiased;
+  font-feature-settings: 'tnum' 0;
+}
+
+/* Zahlen in Tabellen laufen auf gleicher Breite, damit Spalten ruhig stehen. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}

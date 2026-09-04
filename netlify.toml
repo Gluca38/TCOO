@@ -1,0 +1,16 @@
+# Deploy-Konfiguration für Netlify.
+# Vercel und Cloudflare Pages erkennen Vite automatisch; dort genügen
+# Build-Befehl "npm run build" und Ausgabeverzeichnis "dist".
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# Die App ist eine Single-Page-Anwendung ohne Routing — dieser Fallback
+# schadet nicht und macht spätere Unterseiten sofort lauffähig.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
