@@ -35,13 +35,20 @@ export const SCENARIO_NAMES: Record<'onprem' | 'cloud', string> = {
 }
 
 export function emptyEntry(blockId: BlockId): BlockEntry {
-  return { blockId, note: '', capex: null, opex: null }
+  // 'generated' heißt hier: noch nie angefasst, darf also von einem
+  // Generierungslauf befüllt werden. Sobald jemand selbst hineinschreibt,
+  // setzt der Store den Status auf 'manual'.
+  return { blockId, note: '', noteOrigin: 'generated', capex: null, opex: null }
 }
 
 export function newCapexLine(startYearIndex = 1) {
   return {
     active: true,
     amount: 0,
+    // Von Hand angelegte Zeilen gelten als angepasst und werden von einem
+    // Generierungslauf nie überschrieben.
+    origin: 'adjusted' as const,
+    uncertainty: null,
     year: startYearIndex,
     usefulLifeYears: 5,
     refreshEveryYears: null,
@@ -52,6 +59,8 @@ export function newOpexLine(startYearIndex = 1) {
   return {
     active: true,
     amount: 0,
+    origin: 'adjusted' as const,
+    uncertainty: null,
     period: 'year' as const,
     startYear: startYearIndex,
     endYear: null,
@@ -73,6 +82,7 @@ export function createEmptyProject(): Project {
     schemaVersion: SCHEMA_VERSION,
     meta: { title: 'Unbenannter TCO-Vergleich', notes: '', createdAt: now, updatedAt: now },
     settings: { ...DEFAULT_SETTINGS },
+    profile: null,
     blocks,
     scenarios: {
       onprem: emptyScenario('onprem', blocks),

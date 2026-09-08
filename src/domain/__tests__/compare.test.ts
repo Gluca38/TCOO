@@ -35,10 +35,10 @@ describe('Vergleich', () => {
   it('rechnet die Differenz als On-Prem minus Cloud', () => {
     const p = baseProject()
     p.scenarios.onprem.entries.compute.opex = {
-      active: true, amount: 100_000, period: 'year', startYear: 1, endYear: null, escalation: 0,
+      active: true, amount: 100_000, origin: 'estimated', uncertainty: null, period: 'year', startYear: 1, endYear: null, escalation: 0,
     }
     p.scenarios.cloud.entries.compute.opex = {
-      active: true, amount: 60_000, period: 'year', startYear: 1, endYear: null, escalation: 0,
+      active: true, amount: 60_000, origin: 'estimated', uncertainty: null, period: 'year', startYear: 1, endYear: null, escalation: 0,
     }
     const r = compare(p, 'cashflow')
     expect(r.deltaByYear).toEqual([40_000, 40_000, 40_000, 40_000, 40_000])
@@ -49,7 +49,7 @@ describe('Vergleich', () => {
   it('bildet den Barwert immer auf Cashflow-Basis, auch in der P&L-Sicht', () => {
     const p = baseProject()
     p.scenarios.onprem.entries.compute.capex = {
-      active: true, amount: 500_000, year: 1, usefulLifeYears: 5, refreshEveryYears: null,
+      active: true, amount: 500_000, origin: 'estimated', uncertainty: null, year: 1, usefulLifeYears: 5, refreshEveryYears: null,
     }
     const cash = compare(p, 'cashflow')
     const pnl = compare(p, 'pnl')
@@ -65,13 +65,13 @@ describe('Vergleich', () => {
   it('erkennt den Break-even bei Migrationsvorleistung im ersten Jahr', () => {
     const p = baseProject()
     p.scenarios.onprem.entries.compute.opex = {
-      active: true, amount: 200_000, period: 'year', startYear: 1, endYear: null, escalation: 0,
+      active: true, amount: 200_000, origin: 'estimated', uncertainty: null, period: 'year', startYear: 1, endYear: null, escalation: 0,
     }
     p.scenarios.cloud.entries.compute.opex = {
-      active: true, amount: 100_000, period: 'year', startYear: 1, endYear: null, escalation: 0,
+      active: true, amount: 100_000, origin: 'estimated', uncertainty: null, period: 'year', startYear: 1, endYear: null, escalation: 0,
     }
     p.scenarios.cloud.entries.migration.capex = {
-      active: true, amount: 250_000, year: 1, usefulLifeYears: 3, refreshEveryYears: null,
+      active: true, amount: 250_000, origin: 'estimated', uncertainty: null, year: 1, usefulLifeYears: 3, refreshEveryYears: null,
     }
     const r = compare(p, 'cashflow')
     // Jahr 1: 200.000 − 350.000 = −150.000; danach je +100.000
@@ -82,13 +82,13 @@ describe('Vergleich', () => {
   it('berechnet die Amortisation der Migrationsvorleistung nachvollziehbar', () => {
     const p = baseProject()
     p.scenarios.onprem.entries.compute.opex = {
-      active: true, amount: 200_000, period: 'year', startYear: 1, endYear: null, escalation: 0,
+      active: true, amount: 200_000, origin: 'estimated', uncertainty: null, period: 'year', startYear: 1, endYear: null, escalation: 0,
     }
     p.scenarios.cloud.entries.compute.opex = {
-      active: true, amount: 100_000, period: 'year', startYear: 1, endYear: null, escalation: 0,
+      active: true, amount: 100_000, origin: 'estimated', uncertainty: null, period: 'year', startYear: 1, endYear: null, escalation: 0,
     }
     p.scenarios.cloud.entries.migration.capex = {
-      active: true, amount: 250_000, year: 1, usefulLifeYears: 3, refreshEveryYears: null,
+      active: true, amount: 250_000, origin: 'estimated', uncertainty: null, year: 1, usefulLifeYears: 3, refreshEveryYears: null,
     }
     const r = compare(p, 'cashflow')
     expect(r.migrationPayback).not.toBeNull()
@@ -103,10 +103,10 @@ describe('Kennzahlen je Szenario', () => {
   it('trennt CapEx und OpEx und weist die Quote aus', () => {
     const p = baseProject()
     p.scenarios.onprem.entries.compute.capex = {
-      active: true, amount: 300_000, year: 1, usefulLifeYears: 5, refreshEveryYears: null,
+      active: true, amount: 300_000, origin: 'estimated', uncertainty: null, year: 1, usefulLifeYears: 5, refreshEveryYears: null,
     }
     p.scenarios.onprem.entries.support.opex = {
-      active: true, amount: 100_000, period: 'year', startYear: 1, endYear: null, escalation: 0,
+      active: true, amount: 100_000, origin: 'estimated', uncertainty: null, period: 'year', startYear: 1, endYear: null, escalation: 0,
     }
     const [onprem] = scenarioKpis(p, compare(p, 'cashflow'))
     expect(onprem.capexTotal).toBe(300_000)

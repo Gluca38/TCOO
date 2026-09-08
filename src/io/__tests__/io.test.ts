@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { deserializeProject, serializeProject, suggestedFileName } from '../json'
 import { projectToCsv, CSV_BOM } from '../csv'
-import { createExampleProject } from '../../domain/example'
+import { createReferenceProject } from '../../domain/__tests__/referenceProject'
 import { compare } from '../../domain/compare'
 
 describe('JSON-Export und -Import', () => {
   it('lädt einen Export verlustfrei zurück', () => {
-    const original = createExampleProject()
+    const original = createReferenceProject()
     const result = deserializeProject(serializeProject(original))
     expect(result.ok).toBe(true)
     if (!result.ok) return
@@ -26,14 +26,14 @@ describe('JSON-Export und -Import', () => {
   })
 
   it('bildet einen dateisystemtauglichen Namen', () => {
-    const p = createExampleProject()
+    const p = createReferenceProject()
     p.meta.title = 'Vergleich: RZ/Cloud «2026»'
     expect(suggestedFileName(p, 'json')).toMatch(/^Vergleich-RZCloud-2026-\d{4}-\d{2}-\d{2}\.json$/)
   })
 })
 
 describe('CSV-Export', () => {
-  const csv = projectToCsv(createExampleProject(), 'cashflow')
+  const csv = projectToCsv(createReferenceProject(), 'cashflow')
 
   it('beginnt mit dem BOM, damit Excel Umlaute korrekt liest', () => {
     expect(csv.startsWith(CSV_BOM)).toBe(true)

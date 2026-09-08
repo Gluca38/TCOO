@@ -1,6 +1,13 @@
 import type { CostView, Project, ScenarioKey } from '../domain/types'
 import { calendarYear, computeScenario, discountSeries } from '../domain/calc'
 import { compare, scenarioKpis } from '../domain/compare'
+import { uncertaintyOf } from '../domain/sensitivity'
+
+const ORIGIN_LABELS = {
+  estimated: 'geschätzt',
+  adjusted: 'angepasst',
+  confirmed: 'kundenbestätigt',
+} as const
 
 /**
  * CSV-Export für deutsches Excel.
@@ -50,6 +57,21 @@ export function projectToCsv(project: Project, view: CostView = project.settings
   lines.push(row(['Diskontierungssatz', `${(s.discountRate * 100).toFixed(2).replace('.', ',')} %`]))
   lines.push(row(['Globale Steigerungsrate', `${(s.defaultEscalation * 100).toFixed(2).replace('.', ',')} %`]))
   if (project.meta.notes) lines.push(row(['Notiz', project.meta.notes]))
+  if (project.profile) {
+    const p = project.profile
+    lines.push(row(['Profil: Anzahl VMs', p.vmCount]))
+    lines.push(row(['Profil: Storage (TB)', p.storageTB ?? 'aus VM-Zahl abgeleitet']))
+    lines.push(
+      row([
+        'Profil: Hardware-Refresh',
+        p.refreshYear === 'outside' ? 'außerhalb der Laufzeit' : calendarYear(s, p.refreshYear),
+      ]),
+    )
+    lines.push(row(['Profil: Betriebsmodell', p.operatingModel]))
+    lines.push(row(['Profil: Regulierungsgrad', p.regulation]))
+    lines.push(row(['Profil: VMs je Host', p.vmsPerHost ?? 'Standardwert']))
+    lines.push(row(['Profil: VMs je Vollzeitkraft', p.vmsPerFte ?? 'Standardwert']))
+  }
   lines.push('')
 
   /* --- Jahreswerte je Block ------------------------------------------- */
@@ -141,7 +163,8 @@ export function projectToCsv(project: Project, view: CostView = project.settings
   lines.push(
     row([
       'Szenario', 'Block', 'Kostenart', 'Betrag', 'Einheit', 'Anfalls-/Startjahr',
-      'Endjahr', 'Nutzungsdauer', 'Wiederholung alle', 'Steigerung', 'Notiz',
+      'Endjahr', 'Nutzungsdauer', 'Wiederholung alle', 'Steigerung',
+      'Herkunft', 'Bandbreite', 'Notiz',
     ]),
   )
   for (const key of ['onprem', 'cloud'] as ScenarioKey[]) {
@@ -155,7 +178,10 @@ export function projectToCsv(project: Project, view: CostView = project.settings
             scenario.name, block.name, 'CapEx', entry.capex.amount, 'einmalig',
             calendarYear(s, entry.capex.year), '', `${entry.capex.usefulLifeYears} Jahre`,
             entry.capex.refreshEveryYears ? `${entry.capex.refreshEveryYears} Jahre` : '',
-            '', entry.note,
+            '',
+            ORIGIN_LABELS[entry.capex.origin],
+            `±${(uncertaintyOf(entry.capex) * 100).toFixed(0)} %`,
+            entry.note,
           ]),
         )
       }
@@ -169,6 +195,8 @@ export function projectToCsv(project: Project, view: CostView = project.settings
             entry.opex.endYear === null ? '' : calendarYear(s, entry.opex.endYear),
             '', '',
             `${(esc * 100).toFixed(2).replace('.', ',')} %${entry.opex.escalation === null ? ' (global)' : ''}`,
+            ORIGIN_LABELS[entry.opex.origin],
+            `±${(uncertaintyOf(entry.opex) * 100).toFixed(0)} %`,
             entry.note,
           ]),
         )

@@ -16,6 +16,54 @@ Zelle der Jahrestabelle zeigt Rohbetrag, angewandte Steigerung,
 Abschreibungsscheibe und Diskontfaktor. Was dort nicht steht, passiert in der
 Berechnung auch nicht.
 
+## Profilbasierte Vorbefüllung
+
+Wenn der Kunde noch keine Kostendaten geliefert hat, lässt sich aus fünf im
+Erstgespräch erfragbaren Merkmalen ein vollständiges Szenario hochrechnen:
+Anzahl VMs (oder Mitarbeiterzahl), Storage, Jahr des nächsten
+Hardware-Refresh, heutiges Betriebsmodell und Regulierungsgrad.
+
+**Jede erzeugte Position trägt sichtbar ihre Herkunft:**
+
+| Status | Bedeutung | Bandbreite in der Sensitivität |
+|---|---|---|
+| **geschätzt** | aus dem Profil erzeugt | ±35 % |
+| **angepasst** | von Hand überschrieben | ±15 % |
+| **kundenbestätigt** | vom Kunden bestätigt, per Klick setzbar | ±5 % |
+
+**Die zentrale Regel:** Ein erneutes Generieren überschreibt ausschließlich
+Positionen mit Status *geschätzt*. Angepasste und bestätigte Werte bleiben
+unangetastet — auch bei mehrfachem Nachjustieren des Profils. Dasselbe gilt
+für selbst geschriebene Notizen.
+
+Der Tornado in der Sensitivität rangiert dadurch nicht mehr nach Blockgröße,
+sondern nach tatsächlicher Unsicherheit. Er beantwortet damit die Frage,
+welche Daten der Kunde als Nächstes liefern sollte.
+
+### Koeffizienten anpassen
+
+Alle Werte stehen in `src/domain/presets/coefficients.ts` — einer reinen
+Datentabelle ohne Logik, mit Kommentar und Belastbarkeitsangabe hinter jedem
+Wert. Die vollständige Quellenlage steht daneben in
+[`src/domain/presets/SOURCES.md`](src/domain/presets/SOURCES.md).
+
+**Die Koeffizienten sind recherchierte Größenordnungen für den deutschen
+Markt, keine Angebotspreise.** Sie sind ausdrücklich dafür gedacht, gegen
+echte Projektdaten ausgetauscht zu werden. Die beiden Werte mit dem größten
+Einfluss — VMs je Host und VMs je Vollzeitkraft — beruhen auf Erhebungen von
+2009–2011 und streuen um den Faktor 10; beide sind deshalb direkt im
+Profildialog überschreibbar.
+
+### Neutralität
+
+`src/domain/presets/__tests__/neutrality.test.ts` hält Fälle fest, in denen
+On-Premises gewinnen muss (kurz zurückliegender Refresh, kleine Umgebung,
+hoher Standardisierungsgrad) und solche, in denen die Cloud gewinnen muss
+(schlecht konsolidierte, personalintensive Umgebung). Zusätzlich wird
+strukturell geprüft, dass kein Block einseitig leer bleibt — einzige
+zulässige Ausnahmen sind das Rechenzentrum (nur On-Prem) und die Migration
+(nur Cloud).
+
 ## Schnellstart
 
 ```bash
@@ -41,6 +89,7 @@ Diese Entscheidungen sind bewusst getroffen und im Code umgesetzt:
 | Barwert | Nur auf die Cashflow-Sicht anwendbar — Barwerte setzen Zahlungsströme voraus |
 | Restwerte | Keine. Keine Altbestände, keine Sunk Costs, keine kalkulatorischen Zinsen |
 | Break-even | Vorzeichenwechsel der kumulierten Differenz, linear interpoliert |
+| Sensitivität | Bandbreite je Position aus dem Herkunftsstatus, globaler Regler als Multiplikator |
 
 **P&L-Summe ≠ Cashflow-Summe.** Abschreibungsscheiben, die hinter das Ende des
 Betrachtungszeitraums fallen, gehen nicht in die P&L-Summe ein. Der Betrag wird
@@ -62,6 +111,7 @@ delta(t)    = onprem(t) − cloud(t)                  positiv = Cloud günstiger
 ```
 src/
 ├─ domain/    Datenmodell, Formeln, Vergleich, Sensitivität, Schema — rein funktional
+│  └─ presets/  Koeffiziententabelle, Quellen, Profil, Erzeugung
 ├─ state/     Store und Persistenz-Naht
 ├─ io/        JSON-Export/-Import, CSV-Export
 ├─ format/    de-DE-Formatierung und tolerantes Eingabeparsing
@@ -111,6 +161,10 @@ vollständig durchgerechnetes Referenzszenario als Golden Master
 Logik eines dieser Ergebnisse, schlägt der Test fehl und die Änderung muss
 bewusst bestätigt werden.
 
+Dazu kommen die Tests der Vorbefüllung: Erzeugung, die Zusammenführungsregel
+über drei aufeinanderfolgende Generierungsläufe, die Migration von
+Schema-Version 1 auf 2 und die Neutralitätsprüfung.
+
 ## Deployment
 
 `npm run build` erzeugt ein statisches `dist/`, das auf jedem Webserver läuft.
@@ -125,6 +179,7 @@ VITE_BASE=/tco/ npm run build
 ## Bekannte Grenzen der Version 1
 
 - Genau zwei Szenarien, kein Teilen per URL
+- Die Koeffizienten sind recherchierte Größenordnungen, keine Projektdaten
 - Kein Excel- und kein PDF-Export (JSON und CSV decken Sicherung und
   Weiterverarbeitung ab)
 - Keine Dark-Mode-Variante

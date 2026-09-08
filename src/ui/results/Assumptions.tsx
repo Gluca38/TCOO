@@ -1,5 +1,7 @@
 import { useStore } from '../../state/store'
 import { useComparison, useWarnings } from '../useComparison'
+import { OPERATING_MODEL_LABELS, REGULATION_LABELS } from '../../domain/presets/profile'
+import { calendarYear } from '../../domain/calc'
 import { eur, num } from '../../format'
 
 /**
@@ -40,6 +42,31 @@ export function Assumptions() {
         <Item label="Vorzeichen">Positive Differenz bedeutet: Cloud ist günstiger</Item>
       </dl>
 
+      {project.profile && (
+        <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+          <p className="font-semibold">Aus einem Profil vorbefüllt</p>
+          <p className="mt-1">
+            {num(project.profile.vmCount, 0)} VMs ·{' '}
+            {project.profile.storageTB === null
+              ? 'Storage aus der VM-Zahl abgeleitet'
+              : `${num(project.profile.storageTB, 0)} TB`}{' '}
+            · Hardware-Refresh{' '}
+            {project.profile.refreshYear === 'outside'
+              ? 'außerhalb der Laufzeit'
+              : calendarYear(settings, project.profile.refreshYear)}{' '}
+            · {OPERATING_MODEL_LABELS[project.profile.operatingModel]} ·{' '}
+            {REGULATION_LABELS[project.profile.regulation]}
+          </p>
+          <p className="mt-1.5">
+            Als „geschätzt" gekennzeichnete Positionen sind recherchierte Größenordnungen
+            für den deutschen Markt, <strong>keine Angebotspreise</strong>. Herleitung und
+            Belastbarkeit je Wert stehen in SOURCES.md. Die beiden Werte mit dem größten
+            Einfluss — VMs je Host und je Vollzeitkraft — beruhen auf Erhebungen von
+            2009–2011 und sind entsprechend unsicher.
+          </p>
+        </div>
+      )}
+
       <ul className="mt-4 space-y-1.5 text-xs text-slate-600">
         <li>
           CapEx wird nicht indexiert. Beträge gelten nominal im Anfalljahr; Wiederholungen
@@ -54,6 +81,10 @@ export function Assumptions() {
           angezeigt wird.
         </li>
         <li>Es gibt keine Restwerte, keine Altbestände und keine kalkulatorischen Zinsen.</li>
+        <li>
+          Die Bandbreite in der Sensitivität folgt der Herkunft je Position: geschätzt
+          ±35 %, angepasst ±15 %, kundenbestätigt ±5 %.
+        </li>
       </ul>
 
       {pnl && (
@@ -73,13 +104,23 @@ export function Assumptions() {
       {result.migrationPayback && (
         <div className="mt-3 rounded-md bg-slate-50 p-3 text-xs text-slate-700">
           <p className="font-semibold">Amortisation der Migrationsvorleistung</p>
-          <p className="mt-1 tabular">
-            {eur(result.migrationPayback.upfront)} Vorleistung ÷{' '}
-            {eur(result.migrationPayback.annualSaving)} Einsparung pro Jahr ={' '}
-            {result.migrationPayback.years === null
-              ? 'keine Amortisation (keine Einsparung)'
-              : `${num(result.migrationPayback.years, 1)} Jahre`}
-          </p>
+          {result.migrationPayback.years === null ? (
+            <p className="mt-1">
+              <span className="tabular">{eur(result.migrationPayback.upfront)}</span> Vorleistung,
+              der aber keine laufende Einsparung gegenübersteht — im Gegenteil, der
+              Cloud-Betrieb liegt um{' '}
+              <span className="tabular">
+                {eur(Math.abs(result.migrationPayback.annualSaving))}
+              </span>{' '}
+              pro Jahr höher. Die Vorleistung amortisiert sich in diesem Szenario nicht.
+            </p>
+          ) : (
+            <p className="mt-1 tabular">
+              {eur(result.migrationPayback.upfront)} Vorleistung ÷{' '}
+              {eur(result.migrationPayback.annualSaving)} Einsparung pro Jahr ={' '}
+              {num(result.migrationPayback.years, 1)} Jahre
+            </p>
+          )}
           <p className="mt-1 text-slate-500">
             Vorleistung sind die Cloud-Kosten im Block „Migration und Einmalaufwände". Die
             Einsparung wird ohne diesen Block gerechnet, damit sie nicht gegen sich selbst läuft.

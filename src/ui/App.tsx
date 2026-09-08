@@ -8,13 +8,15 @@ import { DrilldownPanel } from './results/DrilldownPanel'
 import { AnnualChart, CumulativeChart } from './results/Charts'
 import { Sensitivity } from './results/Sensitivity'
 import { Assumptions } from './results/Assumptions'
+import { ProfileDialog } from './inputs/ProfileDialog'
 import { compare } from '../domain/compare'
 
 export function App() {
   const hydrate = useStore((s) => s.hydrate)
   const hydrated = useStore((s) => s.hydrated)
   const project = useStore((s) => s.project)
-  const loadExample = useStore((s) => s.loadExample)
+  const setProfileOpen = useStore((s) => s.setProfileOpen)
+  const loadDemoProfile = useStore((s) => s.loadDemoProfile)
 
   useEffect(() => {
     void hydrate()
@@ -37,20 +39,30 @@ export function App() {
           <div className="rounded-lg border border-accent-200 bg-accent-50 p-4">
             <h2 className="text-sm font-semibold text-accent-900">Noch keine Beträge erfasst</h2>
             <p className="mt-1 max-w-3xl text-sm text-accent-900/80">
-              Klappen Sie unten einen Kostenblock auf und tragen Sie je Szenario einen kumulierten
-              Betrag ein. Der Rechner ermittelt keine Preise — er strukturiert, verteilt zeitlich
-              und wertet methodisch aus.
+              Entweder Sie tragen die Beträge je Kostenblock selbst ein — oder Sie lassen aus
+              fünf Merkmalen aus dem Erstgespräch ein Szenario hochrechnen und arbeiten von
+              dort aus weiter. Jede erzeugte Position wird als „geschätzt" gekennzeichnet und
+              lässt sich einzeln überschreiben oder vom Kunden bestätigen.
             </p>
-            <button
-              type="button"
-              onClick={loadExample}
-              className="mt-3 rounded-md bg-accent-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-accent-700"
-            >
-              Beispielszenario laden
-            </button>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setProfileOpen(true)}
+                className="rounded-md bg-accent-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-accent-700"
+              >
+                Szenario aus Profil erzeugen
+              </button>
+              <button
+                type="button"
+                onClick={loadDemoProfile}
+                className="rounded-md border border-accent-300 bg-white px-3 py-1.5 text-sm font-medium text-accent-800 transition hover:bg-accent-50"
+              >
+                Demo-Profil laden
+              </button>
+            </div>
             <p className="mt-2 text-xs text-accent-900/60">
-              Demonstrationsdaten mit frei erfundenen Größenordnungen — ausdrücklich keine
-              Preisempfehlung.
+              Die Koeffizienten sind recherchierte Größenordnungen für den deutschen Markt,
+              keine Angebotspreise. Herleitung und Belastbarkeit stehen in SOURCES.md.
             </p>
           </div>
         </div>
@@ -85,6 +97,7 @@ export function App() {
       </footer>
 
       <DrilldownPanel />
+      <ProfileDialog />
     </div>
   )
 }

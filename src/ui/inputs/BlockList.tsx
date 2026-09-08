@@ -3,7 +3,8 @@ import { useStore } from '../../state/store'
 import { useComparison, useWarnings } from '../useComparison'
 import { ScenarioEntry } from './ScenarioEntry'
 import { eur, eurSigned } from '../../format'
-import type { BlockId } from '../../domain/types'
+import { OriginBadge } from '../components/OriginBadge'
+import type { BlockId, Origin, ScenarioKey } from '../../domain/types'
 
 /** Eingabeabschnitt: Blockliste mit Gegenüberstellung beider Szenarien. */
 export function BlockList() {
@@ -26,7 +27,8 @@ export function BlockList() {
         <div>
           <h2 className="text-base font-semibold text-slate-900">Eingabe</h2>
           <p className="text-sm text-slate-500">
-            Je Block ein kumulierter Betrag pro Szenario — keine Einzelpositionen, keine Preisliste.
+            Je Block ein kumulierter Betrag pro Szenario. Klick auf das Herkunftskennzeichen
+            setzt einen Block auf „kundenbestätigt".
           </p>
         </div>
         <div className="flex gap-2">
@@ -95,7 +97,23 @@ function BlockRow({
   const removeBlock = useStore((s) => s.removeBlock)
   const result = useComparison()
   const warnings = useWarnings().filter((w) => w.blockId === blockId)
+  const setBlockOrigin = useStore((s) => s.setBlockOrigin)
+  const scenarios = useStore((s) => s.project.scenarios)
   const [renaming, setRenaming] = useState(false)
+
+  // Schwächster Herkunftsstatus im Block — er bestimmt, wie belastbar die
+  // Blocksumme insgesamt ist.
+  const rank: Record<Origin, number> = { estimated: 0, adjusted: 1, confirmed: 2 }
+  const activeLines = (['onprem', 'cloud'] as ScenarioKey[]).flatMap((key) => {
+    const entry = scenarios[key].entries[blockId]
+    return [entry?.capex, entry?.opex].filter((l) => l?.active)
+  })
+  const blockOrigin: Origin | null = activeLines.length
+    ? activeLines.reduce<Origin>(
+        (weakest, line) => (rank[line!.origin] < rank[weakest] ? line!.origin : weakest),
+        'confirmed',
+      )
+    : null
 
   const onpremTotal = sum(result.onprem.byBlock[blockId])
   const cloudTotal = sum(result.cloud.byBlock[blockId])
@@ -153,6 +171,17 @@ function BlockRow({
             >
               meist nur On-Prem
             </span>
+          )}
+          {blockOrigin && (
+            <OriginBadge
+              origin={blockOrigin}
+              onClick={() =>
+                setBlockOrigin(
+                  blockId,
+                  blockOrigin === 'confirmed' ? 'adjusted' : 'confirmed',
+                )
+              }
+            />
           )}
           {warnings.length > 0 && (
             <span

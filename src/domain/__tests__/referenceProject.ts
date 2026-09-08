@@ -1,8 +1,14 @@
-import type { BlockEntry, Project } from './types'
-import { createEmptyProject } from './defaults'
+import type { BlockEntry, Project } from '../types'
+import { createEmptyProject } from '../defaults'
 
 /**
- * Beispielszenario: mittelgroße IT-Landschaft vor dem Hardware-Refresh.
+ * Referenzszenario für den Golden-Master-Test.
+ *
+ * Dies ist bewusst kein Bestandteil der Anwendung mehr — die Vorbefüllung
+ * läuft über das Profil. Das Szenario bleibt hier als eingefrorene Fixture
+ * erhalten, damit jede Änderung an der Berechnungslogik sofort auffällt.
+ *
+ * Ursprünglich: mittelgroße IT-Landschaft vor dem Hardware-Refresh.
  *
  * Bewusst so gewählt, dass der typische Entscheidungsfall abgebildet wird —
  * die bestehende Hardware läuft aus und müsste in Jahr 3 ersetzt werden,
@@ -27,10 +33,13 @@ function entry(blockId: string, note: string, capex?: CapexInput, opex?: OpexInp
   return {
     blockId,
     note,
+    noteOrigin: 'manual',
     capex: capex
       ? {
           active: true,
           amount: capex.amount,
+          origin: 'adjusted',
+          uncertainty: null,
           year: capex.year,
           usefulLifeYears: capex.life,
           refreshEveryYears: capex.refresh ?? null,
@@ -40,6 +49,8 @@ function entry(blockId: string, note: string, capex?: CapexInput, opex?: OpexInp
       ? {
           active: true,
           amount: opex.amount,
+          origin: 'adjusted',
+          uncertainty: null,
           period: opex.period ?? 'year',
           startYear: opex.from ?? 1,
           endYear: opex.to ?? null,
@@ -49,7 +60,7 @@ function entry(blockId: string, note: string, capex?: CapexInput, opex?: OpexInp
   }
 }
 
-export function createExampleProject(): Project {
+export function createReferenceProject(): Project {
   const p = createEmptyProject()
   p.meta.title = 'Beispiel: Hardware-Refresh vs. Migration in die Public Cloud'
   p.meta.notes =

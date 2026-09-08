@@ -2,6 +2,7 @@ import type { BlockId, ScenarioKey } from '../../domain/types'
 import { useStore } from '../../state/store'
 import { AmountInput, Checkbox, Field, IntegerInput, PercentInput, YearSelect } from '../components/fields'
 import { capexEvents } from '../../domain/calc'
+import { OriginBadge } from '../components/OriginBadge'
 import { eur } from '../../format'
 
 /**
@@ -44,8 +45,20 @@ export function ScenarioEntry({ scenario, blockId }: { scenario: ScenarioKey; bl
             checked ? updateCapex(scenario, blockId, { active: true }) : updateCapex(scenario, blockId, null)
           }
           label={
-            <span>
-              Einmalig <span className="font-normal text-slate-500">(CapEx)</span>
+            <span className="flex items-center gap-2">
+              <span>
+                Einmalig <span className="font-normal text-slate-500">(CapEx)</span>
+              </span>
+              {capex?.active && (
+                <OriginBadge
+                  origin={capex.origin}
+                  onClick={() =>
+                    updateCapex(scenario, blockId, {
+                      origin: capex.origin === 'confirmed' ? 'adjusted' : 'confirmed',
+                    })
+                  }
+                />
+              )}
             </span>
           }
         />
@@ -105,8 +118,20 @@ export function ScenarioEntry({ scenario, blockId }: { scenario: ScenarioKey; bl
             checked ? updateOpex(scenario, blockId, { active: true }) : updateOpex(scenario, blockId, null)
           }
           label={
-            <span>
-              Laufend <span className="font-normal text-slate-500">(OpEx)</span>
+            <span className="flex items-center gap-2">
+              <span>
+                Laufend <span className="font-normal text-slate-500">(OpEx)</span>
+              </span>
+              {opex?.active && (
+                <OriginBadge
+                  origin={opex.origin}
+                  onClick={() =>
+                    updateOpex(scenario, blockId, {
+                      origin: opex.origin === 'confirmed' ? 'adjusted' : 'confirmed',
+                    })
+                  }
+                />
+              )}
             </span>
           }
         />

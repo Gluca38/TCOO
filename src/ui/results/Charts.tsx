@@ -246,8 +246,12 @@ export function AnnualChart() {
  * Eigene Legende: die Farbe trägt das Szenario, die Deckkraft die Richtung.
  * Beides muss benannt sein, damit die Zuordnung nicht allein an der Farbe hängt.
  */
-function TornadoLegend({ pct }: { pct: number }) {
-  const step = num(pct * 100, 0)
+function TornadoLegend({
+  entries,
+}: {
+  entries: Array<{ name: string; origin: string; uncertainty: number }>
+}) {
+  const spans = [...new Set(entries.map((e) => `${num(e.uncertainty * 100, 0)} %`))]
   return (
     <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5 pt-3 text-xs text-slate-600">
       <span className="flex items-center gap-1.5">
@@ -260,22 +264,28 @@ function TornadoLegend({ pct }: { pct: number }) {
       </span>
       <span className="flex items-center gap-1.5 text-slate-500">
         <span className="h-2.5 w-2.5 rounded-sm bg-slate-400" style={{ opacity: 0.45 }} />
-        hell = bei −{step} %
+        hell = untere Bandbreite
         <span className="ml-2 h-2.5 w-2.5 rounded-sm bg-slate-400" />
-        kräftig = bei +{step} %
+        kräftig = obere
       </span>
+      <span className="text-slate-500">wirksam ±{spans.join(' / ±')}</span>
     </div>
   )
 }
 
-export function TornadoChart({ pct }: { pct: number }) {
+export function TornadoChart({ multiplier }: { multiplier: number }) {
   const project = useStore((s) => s.project)
   const view = project.settings.view
-  const { base, entries } = useMemo(() => tornado(project, view, pct, 5), [project, view, pct])
+  const { base, entries } = useMemo(
+    () => tornado(project, view, multiplier, 5),
+    [project, view, multiplier],
+  )
 
   const data = entries.map((e) => ({
     name: `${e.blockName} · ${e.scenarioName}`,
     scenario: e.scenario,
+    origin: e.origin,
+    uncertainty: e.uncertainty,
     low: e.low - base,
     high: e.high - base,
   }))
@@ -292,8 +302,10 @@ export function TornadoChart({ pct }: { pct: number }) {
 
   return (
     <ChartCard
-      title={`Einfluss auf die Gesamtdifferenz bei ±${num(pct * 100, 0)} %`}
-      description={`Ausgangswert: ${eurSigned(base)}. Balken zeigen die Abweichung davon, farbig nach Szenario.`}
+      title="Woran das Ergebnis wackelt"
+      description={`Ausgangswert: ${eurSigned(base)}. Die Bandbreite je Block folgt der Herkunft seiner Werte${
+        multiplier !== 1 ? `, skaliert mit Faktor ${num(multiplier, 2)}` : ''
+      }.`}
     >
       <ResponsiveContainer width="100%" height={Math.max(220, data.length * 52 + 60)}>
         <BarChart data={data} layout="vertical" margin={{ top: 8, right: 24, bottom: 4, left: 8 }}>
@@ -311,17 +323,17 @@ export function TornadoChart({ pct }: { pct: number }) {
             content={<TooltipBox formatLabel={(l) => String(l)} />}
           />
           <ReferenceLine x={0} stroke={AXIS} />
-          <Bar dataKey="low" name={`bei −${num(pct * 100, 0)} %`} radius={2} barSize={12}>
+          <Bar dataKey="low" name="untere Bandbreite" radius={2} barSize={12}>
             {data.map((d, i) => (
               <Cell key={i} fill={d.scenario === 'onprem' ? ONPREM : CLOUD} fillOpacity={0.45} />
             ))}
           </Bar>
-          <Bar dataKey="high" name={`bei +${num(pct * 100, 0)} %`} radius={2} barSize={12}>
+          <Bar dataKey="high" name="obere Bandbreite" radius={2} barSize={12}>
             {data.map((d, i) => (
               <Cell key={i} fill={d.scenario === 'onprem' ? ONPREM : CLOUD} />
             ))}
           </Bar>
-          <Legend content={<TornadoLegend pct={pct} />} />
+          <Legend content={<TornadoLegend entries={data} />} />
         </BarChart>
       </ResponsiveContainer>
     </ChartCard>

@@ -10,9 +10,13 @@ import { SCHEMA_VERSION } from './types'
  * oder halb zu laden.
  */
 
+const originSchema = z.enum(['estimated', 'adjusted', 'confirmed'])
+
 const capexSchema = z.object({
   active: z.boolean(),
   amount: z.number().finite(),
+  origin: originSchema,
+  uncertainty: z.number().min(0).max(5).nullable(),
   year: z.number().int().min(1),
   usefulLifeYears: z.number().int().min(1),
   refreshEveryYears: z.number().int().min(1).nullable(),
@@ -21,6 +25,8 @@ const capexSchema = z.object({
 const opexSchema = z.object({
   active: z.boolean(),
   amount: z.number().finite(),
+  origin: originSchema,
+  uncertainty: z.number().min(0).max(5).nullable(),
   period: z.enum(['month', 'year']),
   startYear: z.number().int().min(1),
   endYear: z.number().int().min(1).nullable(),
@@ -30,6 +36,7 @@ const opexSchema = z.object({
 const entrySchema = z.object({
   blockId: z.string().min(1),
   note: z.string(),
+  noteOrigin: z.enum(['generated', 'manual']),
   capex: capexSchema.nullable(),
   opex: opexSchema.nullable(),
 })
@@ -58,8 +65,20 @@ const settingsSchema = z.object({
   discounted: z.boolean(),
 })
 
+const profileSchema = z.object({
+  vmCount: z.number().min(0),
+  employeeCount: z.number().min(0).nullable(),
+  storageTB: z.number().min(0).nullable(),
+  refreshYear: z.union([z.number().int().min(1), z.literal('outside')]),
+  operatingModel: z.enum(['own-dc', 'colocation', 'hoster']),
+  regulation: z.enum(['standard', 'elevated', 'high']),
+  vmsPerHost: z.number().positive().nullable(),
+  vmsPerFte: z.number().positive().nullable(),
+})
+
 export const projectSchema = z.object({
   schemaVersion: z.number().int().min(1),
+  profile: profileSchema.nullable(),
   meta: z.object({
     title: z.string(),
     notes: z.string(),
@@ -80,15 +99,49 @@ export type ParseResult =
 
 /**
  * Migriert ältere Speicherstände auf die aktuelle Schema-Version.
- * Aktuell existiert nur Version 1 — die Funktion ist der vorgesehene Ort
- * für künftige Migrationen.
  */
 function migrate(raw: unknown): { data: unknown; from: number } {
   const version =
     typeof raw === 'object' && raw !== null && 'schemaVersion' in raw
       ? Number((raw as { schemaVersion: unknown }).schemaVersion)
       : 0
-  return { data: raw, from: version }
+
+  let data = raw
+  if (version === 1) data = migrateV1toV2(data)
+  return { data, from: version }
+}
+
+/**
+ * Version 1 kannte weder Herkunftsstatus noch Profil.
+ *
+ * Alle vorhandenen Positionen werden als **angepasst** eingestuft und alle
+ * Notizen als **selbst geschrieben**. Das ist die sichere Richtung: von Hand
+ * erfasste Werte dürfen von einem Generierungslauf nie überschrieben werden.
+ */
+function migrateV1toV2(raw: unknown): unknown {
+  const data = structuredClone(raw) as {
+    schemaVersion: number
+    profile?: unknown
+    scenarios?: Record<string, { entries?: Record<string, Record<string, unknown>> }>
+  }
+
+  data.schemaVersion = 2
+  data.profile = null
+
+  for (const scenario of Object.values(data.scenarios ?? {})) {
+    for (const entry of Object.values(scenario.entries ?? {})) {
+      entry.noteOrigin = 'manual'
+      for (const key of ['capex', 'opex'] as const) {
+        const line = entry[key] as Record<string, unknown> | null | undefined
+        if (line) {
+          line.origin = 'adjusted'
+          line.uncertainty = null
+        }
+      }
+    }
+  }
+
+  return data
 }
 
 function formatIssue(issue: z.ZodIssue): string {
@@ -133,7 +186,13 @@ export function repairEntries(project: Project): Project {
     const scenario = out.scenarios[scenarioKey]
     for (const block of out.blocks) {
       if (!scenario.entries[block.id]) {
-        scenario.entries[block.id] = { blockId: block.id, note: '', capex: null, opex: null }
+        scenario.entries[block.id] = {
+          blockId: block.id,
+          note: '',
+          noteOrigin: 'manual',
+          capex: null,
+          opex: null,
+        }
       }
     }
     // Einträge ohne zugehörigen Block entfernen.

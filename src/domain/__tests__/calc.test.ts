@@ -25,6 +25,8 @@ function opex(partial: Partial<OpexLine> = {}): OpexLine {
   return {
     active: true,
     amount: 100_000,
+    origin: 'estimated',
+    uncertainty: null,
     period: 'year',
     startYear: 1,
     endYear: null,
@@ -34,7 +36,16 @@ function opex(partial: Partial<OpexLine> = {}): OpexLine {
 }
 
 function capex(partial: Partial<CapexLine> = {}): CapexLine {
-  return { active: true, amount: 100_000, year: 1, usefulLifeYears: 5, refreshEveryYears: null, ...partial }
+  return {
+    active: true,
+    amount: 100_000,
+    origin: 'estimated',
+    uncertainty: null,
+    year: 1,
+    usefulLifeYears: 5,
+    refreshEveryYears: null,
+    ...partial,
+  }
 }
 
 describe('OpEx', () => {
@@ -126,6 +137,7 @@ describe('Szenario-Aggregation', () => {
     p.scenarios.onprem.entries.compute = {
       blockId: 'compute',
       note: '',
+      noteOrigin: 'manual',
       capex: capexLine,
       opex: opexLine,
     }
@@ -167,6 +179,7 @@ describe('Aufschlüsselung', () => {
     p.scenarios.cloud.entries.compute = {
       blockId: 'compute',
       note: '',
+      noteOrigin: 'manual',
       capex: null,
       opex: opex({ amount: 10_000, period: 'month', escalation: 0.05 }),
     }
@@ -184,6 +197,7 @@ describe('Aufschlüsselung', () => {
     p.scenarios.onprem.entries.compute = {
       blockId: 'compute',
       note: '',
+      noteOrigin: 'manual',
       capex: capex({ amount: 200_000, year: 1, refreshEveryYears: 3 }),
       opex: null,
     }

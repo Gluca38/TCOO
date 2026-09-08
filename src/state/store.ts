@@ -6,12 +6,15 @@ import type {
   CapexLine,
   CostView,
   OpexLine,
+  Origin,
+  Profile,
   Project,
   ScenarioKey,
   Settings,
 } from '../domain/types'
 import { createEmptyProject, emptyEntry, newCapexLine, newOpexLine } from '../domain/defaults'
-import { createExampleProject } from '../domain/example'
+import { applyGenerated } from '../domain/presets/generate'
+import { demoProfile } from '../domain/presets/profile'
 import { repairEntries } from '../domain/schema'
 import { repository } from './repository'
 
@@ -21,10 +24,20 @@ interface StoreState {
   /** Zellauswahl für die Aufschlüsselung. null = Panel geschlossen. */
   drilldown: { scenario: ScenarioKey; year: number; blockId?: BlockId } | null
 
+  /** Profildialog offen? */
+  profileOpen: boolean
+
   hydrate: () => Promise<void>
   replaceProject: (project: Project) => void
-  loadExample: () => void
   reset: () => void
+
+  setProfileOpen: (open: boolean) => void
+  /** Erzeugt beide Szenarien aus dem Profil und führt sie zusammen. */
+  generateFromProfile: (profile: Profile) => void
+  /** Öffnet den Dialog mit dem Demo-Profil, ohne schon zu erzeugen. */
+  loadDemoProfile: () => void
+  /** Setzt den Herkunftsstatus aller aktiven Zeilen eines Blocks. */
+  setBlockOrigin: (blockId: BlockId, origin: Origin) => void
 
   updateMeta: (patch: Partial<Project['meta']>) => void
   updateSettings: (patch: Partial<Settings>) => void
@@ -54,10 +67,11 @@ function commit(set: (fn: (s: StoreState) => Partial<StoreState>) => void, mutat
   })
 }
 
-export const useStore = create<StoreState>((set, get) => ({
+export const useStore = create<StoreState>((set) => ({
   project: createEmptyProject(),
   hydrated: false,
   drilldown: null,
+  profileOpen: false,
 
   hydrate: async () => {
     const stored = await repository.load()
@@ -70,12 +84,33 @@ export const useStore = create<StoreState>((set, get) => ({
     set({ project: repaired, drilldown: null })
   },
 
-  loadExample: () => get().replaceProject(createExampleProject()),
+  setProfileOpen: (open) => set({ profileOpen: open }),
+
+  generateFromProfile: (profile) => {
+    set((state) => {
+      const next = applyGenerated(state.project, profile)
+      void repository.save(next)
+      return { project: next, profileOpen: false, drilldown: null }
+    })
+  },
+
+  loadDemoProfile: () =>
+    set((state) => ({ project: { ...state.project, profile: demoProfile() }, profileOpen: true })),
+
+  setBlockOrigin: (blockId, origin) =>
+    commit(set, (d) => {
+      for (const scenario of ['onprem', 'cloud'] as ScenarioKey[]) {
+        const entry = d.scenarios[scenario].entries[blockId]
+        if (!entry) continue
+        if (entry.capex?.active) entry.capex.origin = origin
+        if (entry.opex?.active) entry.opex.origin = origin
+      }
+    }),
 
   reset: () => {
     const fresh = createEmptyProject()
     void repository.save(fresh)
-    set({ project: fresh, drilldown: null })
+    set({ project: fresh, drilldown: null, profileOpen: false })
   },
 
   updateMeta: (patch) => commit(set, (d) => Object.assign(d.meta, patch)),
@@ -131,7 +166,9 @@ export const useStore = create<StoreState>((set, get) => ({
   updateEntry: (key, blockId, patch) =>
     commit(set, (d) => {
       const entry = d.scenarios[key].entries[blockId] ?? emptyEntry(blockId)
-      d.scenarios[key].entries[blockId] = { ...entry, ...patch }
+      // Eine selbst geschriebene Notiz wird beim Generieren nie ersetzt.
+      const noteOrigin = patch.note !== undefined ? ('manual' as const) : entry.noteOrigin
+      d.scenarios[key].entries[blockId] = { ...entry, ...patch, noteOrigin }
     }),
 
   updateCapex: (key, blockId, patch) =>
@@ -140,7 +177,13 @@ export const useStore = create<StoreState>((set, get) => ({
       if (patch === null) {
         entry.capex = null
       } else {
-        entry.capex = { ...(entry.capex ?? newCapexLine()), ...patch }
+        const base = entry.capex ?? newCapexLine()
+        // Ein geänderter Betrag macht aus einer Schätzung eine eigene Angabe.
+        const origin: Origin =
+          patch.amount !== undefined && patch.amount !== base.amount && base.origin === 'estimated'
+            ? 'adjusted'
+            : (patch.origin ?? base.origin)
+        entry.capex = { ...base, ...patch, origin }
       }
       d.scenarios[key].entries[blockId] = entry
     }),
@@ -151,7 +194,12 @@ export const useStore = create<StoreState>((set, get) => ({
       if (patch === null) {
         entry.opex = null
       } else {
-        entry.opex = { ...(entry.opex ?? newOpexLine()), ...patch }
+        const base = entry.opex ?? newOpexLine()
+        const origin: Origin =
+          patch.amount !== undefined && patch.amount !== base.amount && base.origin === 'estimated'
+            ? 'adjusted'
+            : (patch.origin ?? base.origin)
+        entry.opex = { ...base, ...patch, origin }
       }
       d.scenarios[key].entries[blockId] = entry
     }),

@@ -15,7 +15,7 @@ export function Sensitivity() {
   const project = useStore((s) => s.project)
   const [rate, setRate] = useState<number | null>(null)
   const [horizon, setHorizon] = useState<number | null>(null)
-  const [pct, setPct] = useState(0.2)
+  const [multiplier, setMultiplier] = useState(1)
 
   const effectiveRate = rate ?? project.settings.discountRate
   const effectiveHorizon = horizon ?? project.settings.horizonYears
@@ -36,12 +36,14 @@ export function Sensitivity() {
       <div className="mb-3">
         <h2 className="text-base font-semibold text-slate-900">Sensitivität</h2>
         <p className="text-sm text-slate-500">
-          Wie stabil ist das Ergebnis, wenn sich Annahmen verschieben?
+          Die Bandbreite je Position folgt ihrer Herkunft — geschätzte Werte wackeln stark,
+          kundenbestätigte kaum. Der Tornado zeigt damit, welche Daten der Kunde als
+          Nächstes liefern sollte.
         </p>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[1fr_380px]">
-        <TornadoChart pct={pct} />
+        <TornadoChart multiplier={multiplier} />
 
         <div className="space-y-4">
           <div className="rounded-lg border border-slate-200 bg-white p-4">
@@ -71,14 +73,14 @@ export function Sensitivity() {
               onChange={setHorizon}
             />
             <Slider
-              label="Variation im Tornado"
-              value={pct * 100}
-              min={5}
-              max={50}
-              step={5}
-              suffix=" %"
-              baseline="Standard 20 %"
-              onChange={(v) => setPct(v / 100)}
+              label="Bandbreiten skalieren"
+              value={multiplier}
+              min={0.5}
+              max={3}
+              step={0.25}
+              suffix="×"
+              baseline="Bandbreiten folgen der Datenherkunft: geschätzt ±35 %, angepasst ±15 %, kundenbestätigt ±5 %"
+              onChange={setMultiplier}
             />
 
             {touched && (

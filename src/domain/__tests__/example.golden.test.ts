@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createExampleProject } from '../example'
+import { createReferenceProject } from './referenceProject'
 import { compare } from '../compare'
 import { computeScenario } from '../calc'
 import { validateProject } from '../validate'
@@ -12,8 +12,8 @@ import { validateProject } from '../validate'
  * schlägt der Test fehl und die Änderung muss bewusst bestätigt werden.
  * Alle Zahlen sind von Hand über die dokumentierten Formeln nachrechenbar.
  */
-describe('Beispielszenario (Golden Master)', () => {
-  const project = createExampleProject()
+describe('Referenzszenario (Golden Master)', () => {
+  const project = createReferenceProject()
 
   it('rechnet die Cashflow-Sicht stabil', () => {
     const r = compare(project, 'cashflow')

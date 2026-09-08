@@ -1,4 +1,6 @@
+import { useMemo } from 'react'
 import { useStore } from '../../state/store'
+import { confirmedBlockCount } from '../../domain/presets/generate'
 import { IntegerInput, PercentInput } from '../components/fields'
 import { ExportBar } from './ExportBar'
 
@@ -14,6 +16,9 @@ export function SettingsBar() {
   const updateSettings = useStore((s) => s.updateSettings)
   const updateMeta = useStore((s) => s.updateMeta)
   const setView = useStore((s) => s.setView)
+  const project = useStore((s) => s.project)
+  const setProfileOpen = useStore((s) => s.setProfileOpen)
+  const counts = useMemo(() => confirmedBlockCount(project), [project])
 
   return (
     <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
@@ -29,6 +34,20 @@ export function SettingsBar() {
               onChange={(e) => updateMeta({ title: e.target.value })}
               aria-label="Titel des Vergleichs"
             />
+            {counts.total > 0 && (
+              <p className="mt-0.5 text-xs text-slate-500">
+                <span
+                  className={
+                    counts.confirmed === counts.total
+                      ? 'font-medium text-emerald-700'
+                      : 'font-medium text-slate-700'
+                  }
+                >
+                  {counts.confirmed} von {counts.total}
+                </span>{' '}
+                {counts.total === 1 ? 'Block' : 'Blöcken'} kundenbestätigt
+              </p>
+            )}
           </div>
 
           <div className="flex flex-wrap items-end gap-3">
@@ -108,7 +127,17 @@ export function SettingsBar() {
               </div>
             </div>
 
-            <ExportBar />
+            <div className="flex items-end gap-1.5">
+              <button
+                type="button"
+                onClick={() => setProfileOpen(true)}
+                title="Szenario aus fünf Profilmerkmalen hochrechnen. Überschreibt nur geschätzte Positionen."
+                className="rounded-md border border-accent-300 bg-accent-50 px-2.5 py-1.5 text-sm font-medium text-accent-800 transition hover:bg-accent-100"
+              >
+                Profil
+              </button>
+              <ExportBar />
+            </div>
           </div>
         </div>
       </div>
