@@ -16,7 +16,7 @@ export function App() {
   const hydrated = useStore((s) => s.hydrated)
   const project = useStore((s) => s.project)
   const setProfileOpen = useStore((s) => s.setProfileOpen)
-  const loadDemoProfile = useStore((s) => s.loadDemoProfile)
+  const loadExample = useStore((s) => s.loadExample)
 
   useEffect(() => {
     void hydrate()
@@ -39,30 +39,46 @@ export function App() {
           <div className="rounded-lg border border-accent-200 bg-accent-50 p-4">
             <h2 className="text-sm font-semibold text-accent-900">Noch keine Beträge erfasst</h2>
             <p className="mt-1 max-w-3xl text-sm text-accent-900/80">
-              Entweder Sie tragen die Beträge je Kostenblock selbst ein — oder Sie lassen aus
-              fünf Merkmalen aus dem Erstgespräch ein Szenario hochrechnen und arbeiten von
-              dort aus weiter. Jede erzeugte Position wird als „geschätzt" gekennzeichnet und
-              lässt sich einzeln überschreiben oder vom Kunden bestätigen.
+              Tragen Sie die Beträge je Kostenblock selbst ein — oder starten Sie mit einer
+              der beiden Vorlagen.
             </p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => setProfileOpen(true)}
-                className="rounded-md bg-accent-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-accent-700"
-              >
-                Szenario aus Profil erzeugen
-              </button>
-              <button
-                type="button"
-                onClick={loadDemoProfile}
-                className="rounded-md border border-accent-300 bg-white px-3 py-1.5 text-sm font-medium text-accent-800 transition hover:bg-accent-50"
-              >
-                Demo-Profil laden
-              </button>
+
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
+              <div className="rounded-md border border-accent-200 bg-white p-3">
+                <h3 className="text-sm font-semibold text-slate-900">Zum Kennenlernen</h3>
+                <p className="mt-1 text-sm text-slate-600">
+                  Ein vollständig ausgefülltes Beispiel. Jeder Block erklärt in der Notiz,
+                  was dort hineingehört und woran man Doppelzählungen erkennt.
+                </p>
+                <button
+                  type="button"
+                  onClick={loadExample}
+                  className="mt-3 rounded-md border border-accent-300 px-3 py-1.5 text-sm font-medium text-accent-800 transition hover:bg-accent-50"
+                >
+                  Beispielszenario laden
+                </button>
+              </div>
+
+              <div className="rounded-md border border-accent-200 bg-white p-3">
+                <h3 className="text-sm font-semibold text-slate-900">Für einen echten Fall</h3>
+                <p className="mt-1 text-sm text-slate-600">
+                  Fünf Merkmale aus dem Erstgespräch, daraus werden alle Blöcke
+                  hochgerechnet. Jede Position wird als „geschätzt" gekennzeichnet.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setProfileOpen(true)}
+                  className="mt-3 rounded-md bg-accent-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-accent-700"
+                >
+                  Szenario aus Profil erzeugen
+                </button>
+              </div>
             </div>
-            <p className="mt-2 text-xs text-accent-900/60">
-              Die Koeffizienten sind recherchierte Größenordnungen für den deutschen Markt,
-              keine Angebotspreise. Herleitung und Belastbarkeit stehen in SOURCES.md.
+
+            <p className="mt-3 text-xs text-accent-900/60">
+              Beide Vorlagen rechnen mit denselben Koeffizienten: recherchierte
+              Größenordnungen für den deutschen Markt, keine Angebotspreise. Herleitung und
+              Belastbarkeit je Wert stehen in SOURCES.md.
             </p>
           </div>
         </div>

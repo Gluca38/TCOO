@@ -191,7 +191,9 @@ export function ScenarioEntry({ scenario, blockId }: { scenario: ScenarioKey; bl
         <Field label="Notiz / Herleitung">
           <textarea
             className="w-full rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-sm focus:border-accent-500 focus:outline-none focus:ring-2 focus:ring-accent-100"
-            rows={2}
+            // Erklärung und Herleitung stehen untereinander — zwei Zeilen
+            // hätten die Rechnung unsichtbar unter den Rand geschoben.
+            rows={5}
             value={entry?.note ?? ''}
             placeholder="Woraus setzt sich der Betrag zusammen?"
             onChange={(e) => updateEntry(scenario, blockId, { note: e.target.value })}

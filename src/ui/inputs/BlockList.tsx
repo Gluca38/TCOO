@@ -198,10 +198,10 @@ function BlockRow({
         </div>
 
         <span className={`w-32 text-right text-sm tabular ${empty ? 'text-slate-300' : 'text-slate-700'}`}>
-          {block.enabled ? eur(onpremTotal) : '—'}
+          {block.enabled && onpremTotal !== 0 ? eur(onpremTotal) : '—'}
         </span>
         <span className={`w-32 text-right text-sm tabular ${empty ? 'text-slate-300' : 'text-slate-700'}`}>
-          {block.enabled ? eur(cloudTotal) : '—'}
+          {block.enabled && cloudTotal !== 0 ? eur(cloudTotal) : '—'}
         </span>
         <span
           className={`w-32 text-right text-sm font-medium tabular ${

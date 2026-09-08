@@ -14,7 +14,7 @@ import type {
 } from '../domain/types'
 import { createEmptyProject, emptyEntry, newCapexLine, newOpexLine } from '../domain/defaults'
 import { applyGenerated } from '../domain/presets/generate'
-import { demoProfile } from '../domain/presets/profile'
+import { createExampleProject } from '../domain/presets/exampleScenario'
 import { repairEntries } from '../domain/schema'
 import { repository } from './repository'
 
@@ -34,8 +34,8 @@ interface StoreState {
   setProfileOpen: (open: boolean) => void
   /** Erzeugt beide Szenarien aus dem Profil und führt sie zusammen. */
   generateFromProfile: (profile: Profile) => void
-  /** Öffnet den Dialog mit dem Demo-Profil, ohne schon zu erzeugen. */
-  loadDemoProfile: () => void
+  /** Lädt das erklärte Beispielszenario zum Kennenlernen. */
+  loadExample: () => void
   /** Setzt den Herkunftsstatus aller aktiven Zeilen eines Blocks. */
   setBlockOrigin: (blockId: BlockId, origin: Origin) => void
 
@@ -94,8 +94,11 @@ export const useStore = create<StoreState>((set) => ({
     })
   },
 
-  loadDemoProfile: () =>
-    set((state) => ({ project: { ...state.project, profile: demoProfile() }, profileOpen: true })),
+  loadExample: () => {
+    const example = createExampleProject()
+    void repository.save(example)
+    set({ project: example, drilldown: null, profileOpen: false })
+  },
 
   setBlockOrigin: (blockId, origin) =>
     commit(set, (d) => {
