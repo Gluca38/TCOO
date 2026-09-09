@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { num, parseAmount, parsePercent } from '../../format'
 
 const inputClass =
@@ -257,6 +257,45 @@ export function Checkbox({
         {label}
       </label>
     </div>
+  )
+}
+
+/**
+ * Notizfeld, das mit seinem Inhalt wächst.
+ *
+ * Eine feste Zeilenzahl passt hier nicht: Ein leerer Block braucht zwei
+ * Zeilen, ein erzeugter mit Erklärung und zwei Herleitungen über zehn. Beides
+ * mit demselben Wert zu bedienen heißt, entweder abzuschneiden oder die Maske
+ * unnötig aufzublähen.
+ */
+export function AutoTextarea({
+  value,
+  onChange,
+  placeholder,
+}: {
+  value: string
+  onChange: (value: string) => void
+  placeholder?: string
+}) {
+  const ref = useRef<HTMLTextAreaElement>(null)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${el.scrollHeight}px`
+  }, [value])
+
+  return (
+    <textarea
+      ref={ref}
+      rows={2}
+      value={value}
+      placeholder={placeholder}
+      onChange={(e) => onChange(e.target.value)}
+      // max-h begrenzt sehr lange eigene Notizen; darüber wird gescrollt.
+      className="max-h-80 w-full resize-y overflow-y-auto rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-sm leading-relaxed focus:border-accent-500 focus:outline-none focus:ring-2 focus:ring-accent-100"
+    />
   )
 }
 

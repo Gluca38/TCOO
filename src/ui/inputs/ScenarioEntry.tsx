@@ -1,6 +1,14 @@
 import type { BlockId, ScenarioKey } from '../../domain/types'
 import { useStore } from '../../state/store'
-import { AmountInput, Checkbox, Field, IntegerInput, PercentInput, YearSelect } from '../components/fields'
+import {
+  AmountInput,
+  AutoTextarea,
+  Checkbox,
+  Field,
+  IntegerInput,
+  PercentInput,
+  YearSelect,
+} from '../components/fields'
 import { capexEvents } from '../../domain/calc'
 import { OriginBadge } from '../components/OriginBadge'
 import { eur } from '../../format'
@@ -189,14 +197,10 @@ export function ScenarioEntry({ scenario, blockId }: { scenario: ScenarioKey; bl
       {/* --- Notiz ------------------------------------------------------ */}
       <div className="mt-2.5">
         <Field label="Notiz / Herleitung">
-          <textarea
-            className="w-full rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-sm focus:border-accent-500 focus:outline-none focus:ring-2 focus:ring-accent-100"
-            // Erklärung und Herleitung stehen untereinander — zwei Zeilen
-            // hätten die Rechnung unsichtbar unter den Rand geschoben.
-            rows={5}
+          <AutoTextarea
             value={entry?.note ?? ''}
             placeholder="Woraus setzt sich der Betrag zusammen?"
-            onChange={(e) => updateEntry(scenario, blockId, { note: e.target.value })}
+            onChange={(note) => updateEntry(scenario, blockId, { note })}
           />
         </Field>
       </div>

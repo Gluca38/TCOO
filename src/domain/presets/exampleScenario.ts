@@ -24,76 +24,78 @@ interface Guidance {
 }
 
 /**
- * Was gehört in welchen Block.
+ * Was ein Block umfasst, in vorlesbarer Form.
  *
- * Bewusst auch formuliert, was **nicht** hineingehört — die häufigsten Fehler
- * beim Erfassen sind Doppelzählungen zwischen benachbarten Blöcken.
+ * Bewusst als Fließtext und ohne Formularmarken: Die Texte landen im
+ * Notizfeld und werden im Kundengespräch vorgelesen. Wo Verwechslungsgefahr
+ * mit einem Nachbarblock besteht, wird sie benannt — Doppelzählungen sind
+ * der häufigste Fehler beim Erfassen.
  */
 export const BLOCK_GUIDANCE: Record<string, Guidance> = {
   compute: {
     onprem:
-      'Hierher gehört: Server-Hardware für die Virtualisierung — Hosts, CPU, RAM, lokale Datenträger, Ausfallreserve. Nicht hierher: Speichersysteme und Netzwerk, dafür gibt es eigene Blöcke.',
+      'Die Server-Hardware für die Virtualisierung — Hosts mit Prozessoren, Arbeitsspeicher und lokalen Datenträgern, einschließlich der Reserve für den Ausfall eines Hosts. Speichersysteme und Netzwerk werden getrennt erfasst und haben eigene Blöcke.',
     cloud:
-      'Hierher gehört: laufende Kosten der Rechenleistung, also Instanzen bzw. VMs inklusive zugesicherter Rabatte. Nicht hierher: Speicher und Datenverkehr, die stehen in eigenen Blöcken.',
+      'Die laufenden Kosten der Rechenleistung, also die Instanzen beziehungsweise virtuellen Maschinen samt zugesicherter Rabatte. Speicher und Datenverkehr stehen in eigenen Blöcken.',
   },
   database: {
     onprem:
-      'Hierher gehört: dedizierte Datenbankserver und Datenbanklizenzen, soweit sie nicht bereits unter „Lizenzen und Software" erfasst sind. Auf Doppelzählung achten.',
+      'Dedizierte Datenbankserver und die zugehörigen Lizenzen. Falls die Datenbanklizenzen bereits unter Lizenzen und Software stehen, gehören sie nicht ein zweites Mal hierher.',
     cloud:
-      'Hierher gehört: Managed-Datenbankdienste. Der Aufschlag gegenüber einer selbst betriebenen Datenbank ist der Preis für Backup, Hochverfügbarkeit und Patching — genau das entfällt dafür beim Personal.',
+      'Managed-Datenbankdienste. Der Aufschlag gegenüber einer selbst betriebenen Datenbank bezahlt Sicherung, Hochverfügbarkeit und Patching — also Arbeit, die dafür beim Personal wegfällt.',
   },
   storage: {
     onprem:
-      'Hierher gehört: Speichersysteme mit Controllern und Redundanz. Achtung auf den Unterschied zwischen roher und nutzbarer Kapazität — wer 120 TB nutzen will, kauft deutlich mehr.',
+      'Speichersysteme mit Controllern und Redundanz. Entscheidend ist der Unterschied zwischen roher und nutzbarer Kapazität: Wer 120 Terabyte nutzen will, kauft deutlich mehr ein.',
     cloud:
-      'Hierher gehört: Block- und Objektspeicher inklusive Snapshots. Die Speicherklasse entscheidet stark über den Preis; nicht alles muss auf der schnellsten Klasse liegen.',
+      'Block- und Objektspeicher samt Snapshots. Die Speicherklasse bestimmt den Preis maßgeblich — selten muss alles auf der schnellsten Klasse liegen.',
   },
   network: {
-    both: 'Hierher gehört: Switching, Anbindung, Load Balancing.',
-    onprem: 'Zusätzlich die laufende WAN-Anbindung.',
+    onprem:
+      'Switching, Load Balancing und die laufende Anbindung ans Weitverkehrsnetz.',
     cloud:
-      'Zusätzlich der ausgehende Datenverkehr (Egress) — in Cloud-Rechnungen regelmäßig unterschätzt, weil er erst im Betrieb sichtbar wird.',
+      'Anbindung und Load Balancing, dazu der ausgehende Datenverkehr. Dieser Anteil wird regelmäßig unterschätzt, weil er erst im laufenden Betrieb sichtbar wird.',
   },
   backup: {
     both:
-      'Hierher gehört: Sicherung und Wiederanlauf — Zweitkopie, Medien, Zweitstandort, Wiederherstellungstests. Nicht hierher: der Primärspeicher.',
+      'Sicherung und Wiederanlauf: Zweitkopie, Medien, Zweitstandort und die regelmäßigen Wiederherstellungstests. Der Primärspeicher steht im Block Storage.',
   },
   facility: {
     onprem:
-      'Hierher gehört: Flächenumlage, Strom, Kühlung, USV. Nur beim Eigenbetrieb relevant.',
+      'Flächenumlage, Strom, Kühlung und unterbrechungsfreie Stromversorgung. Nur beim Betrieb im eigenen Rechenzentrum relevant.',
     cloud:
-      'In der Cloud und beim externen Hoster stecken diese Kosten im Servicepreis. Hier etwas einzutragen würde sie doppelt zählen — deshalb bleibt der Block leer.',
+      'Bleibt bewusst leer. Fläche und Energie sind im Cloud-Preis bereits enthalten und stecken im Block Compute. Sie hier noch einmal zu erfassen, würde dieselben Kosten zweimal zählen.',
   },
   licenses: {
     onprem:
-      'Hierher gehört: Virtualisierung, Betriebssysteme, Anwendungen. Der Posten hat sich seit der Broadcom-Übernahme von VMware bei vielen Häusern deutlich verschoben und lohnt eine eigene Prüfung.',
+      'Virtualisierung, Betriebssysteme und Anwendungen. Seit der Übernahme von VMware durch Broadcom hat sich dieser Posten in vielen Häusern erheblich verschoben — er lohnt eine eigene Prüfung.',
     cloud:
-      'Hierher gehört: was an Lizenzen übrig bleibt. Ein Teil ist in den Diensten enthalten — genau dieser Teil ist die Einsparung gegenüber dem Eigenbetrieb.',
+      'Was an Lizenzen übrig bleibt. Ein Teil ist in den Diensten bereits enthalten, und genau dieser Teil ist die Einsparung gegenüber dem Eigenbetrieb.',
   },
   support: {
     onprem:
-      'Hierher gehört: Hardware-Wartungsverträge und Herstellersupport, üblicherweise als Prozentsatz des Anschaffungswerts pro Jahr.',
-    cloud: 'Hierher gehört: der Supportvertrag des Plattformanbieters.',
+      'Wartungsverträge und Herstellersupport für die Hardware, üblicherweise ein Prozentsatz des Anschaffungswerts pro Jahr.',
+    cloud: 'Der Supportvertrag des Plattformanbieters.',
   },
   staff: {
     both:
-      'Hierher gehört: der Betriebsaufwand in Vollkosten, nicht das Bruttogehalt. Rund ein Fünftel Arbeitgeberanteil kommt auf das Gehalt obendrauf.',
-    onprem: 'Enthält die Hardwarebetreuung, die in der Cloud entfällt.',
+      'Der Betriebsaufwand in Vollkosten, nicht das Bruttogehalt — der Arbeitgeberanteil kommt mit rund einem Fünftel obendrauf.',
+    onprem: 'Enthalten ist hier auch die Betreuung der Hardware.',
     cloud:
-      'Hardwarebetreuung entfällt, Plattformsteuerung und Kostenkontrolle kommen hinzu. Die Entlastung fällt in der Praxis geringer aus, als Anbieter sie darstellen.',
+      'Die Hardwarebetreuung entfällt, dafür kommen Plattformsteuerung und Kostenkontrolle hinzu. Die Entlastung fällt in der Praxis geringer aus, als sie von Anbietern dargestellt wird.',
   },
   security: {
     both:
-      'Hierher gehört: Security-Werkzeuge, Audits, Penetrationstests, Compliance-Nachweise. Der Regulierungsgrad im Profil hebt diesen Block an.',
+      'Security-Werkzeuge, Audits, Penetrationstests und Compliance-Nachweise. Ein höherer Regulierungsgrad im Profil hebt diesen Block an.',
   },
   migration: {
     onprem:
-      'Beim Weiterbetrieb fällt kein Migrationsaufwand an — deshalb bleibt der Block hier leer.',
+      'Bleibt leer: Wer im eigenen Rechenzentrum bleibt, hat keinen Umstellungsaufwand.',
     cloud:
-      'Hierher gehört: der Aufwand für die Umstellung selbst — Projektleitung, externe Unterstützung, Parallelbetrieb, Tests, Abnahmen. Dieser Block entscheidet maßgeblich über den Break-even.',
+      'Der Aufwand für die Umstellung selbst — Projektleitung, externe Unterstützung, Parallelbetrieb, Tests und Abnahmen. Dieser Block entscheidet maßgeblich darüber, ab wann sich der Wechsel rechnet.',
   },
   other: {
-    both: 'Hierher gehört: Schulung, Enablement und alles Kleinteilige, das sonst nirgends passt.',
+    both: 'Schulung, Enablement und alles Kleinteilige, das in keinen anderen Block passt.',
   },
 }
 

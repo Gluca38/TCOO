@@ -17,14 +17,23 @@ describe('Beispielszenario', () => {
 
   it('behält die Herleitung neben der Erklärung', () => {
     const note = project.scenarios.onprem.entries.compute.note
-    expect(note).toContain('Hierher gehört')
+    expect(note).toContain('Server-Hardware')
     expect(note).toContain('Hosts')
-    expect(note).toContain('SOURCES.md')
+    expect(note).toContain('Richtwert aus Marktdaten')
+  })
+
+  it('formuliert vorlesbar, ohne Formularmarken und Dateinamen', () => {
+    for (const scenario of ['onprem', 'cloud'] as const) {
+      for (const entry of Object.values(project.scenarios[scenario].entries)) {
+        expect(entry.note, entry.blockId).not.toMatch(/Hierher gehört|Nicht hierher/)
+        expect(entry.note, entry.blockId).not.toMatch(/SOURCES\.md|\.ts\b/i)
+      }
+    }
   })
 
   it('erklärt auch die Blöcke, die bewusst leer bleiben', () => {
     // Rechenzentrum in der Cloud und Migration im Weiterbetrieb.
-    expect(project.scenarios.cloud.entries.facility.note).toContain('doppelt')
+    expect(project.scenarios.cloud.entries.facility.note).toContain('zweimal zählen')
     expect(project.scenarios.onprem.entries.migration.note).toContain('leer')
     expect(project.scenarios.cloud.entries.facility.opex).toBeNull()
     expect(project.scenarios.onprem.entries.migration.capex).toBeNull()

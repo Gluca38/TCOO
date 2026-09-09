@@ -148,8 +148,9 @@ describe('Mengengerüst', () => {
     const d = derive(profileOf({ vmCount: 150, vmsPerHost: 20, vmsPerFte: 80 }))
     expect(d.hosts).toBe(9) // aufgerundet aus 150 / 20, plus ein Reserveknoten (N+1)
     expect(d.storageTB).toBeCloseTo(120, 6) // 150 × 0,8
-    expect(d.fteOnprem).toBeCloseTo(1.875, 6) // 150 / 80, Regulierung standard
-    expect(d.fteCloud).toBeCloseTo(1.875 * 0.75, 6)
+    // Auf zwei Nachkommastellen festgelegt, damit die Notiz exakt aufgeht.
+    expect(d.fteOnprem).toBe(1.88) // 150 / 80 = 1,875, gerundet
+    expect(d.fteCloud).toBe(1.41) // 1,88 × 0,75 = 1,41
   })
 
   it('rechnet die Mitarbeiterzahl um, wenn keine VM-Zahl vorliegt', () => {

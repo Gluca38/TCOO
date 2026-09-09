@@ -20,14 +20,79 @@ describe('Erzeugung', () => {
     }
   })
 
-  it('schreibt eine nachvollziehbare Herleitung in die Notiz', () => {
+  it('schreibt eine im Gespräch vorlesbare Herleitung in die Notiz', () => {
     const project = applyGenerated(createEmptyProject(), profileOf())
     const note = project.scenarios.onprem.entries.compute.note
     expect(note).toContain('Hosts')
-    expect(note).toContain('je Einheit')
-    expect(note).toContain('SOURCES.md')
+    expect(note).toContain('Richtwert aus Marktdaten')
     // Keine erfundene Herkunft.
     expect(note).not.toMatch(/Branchenmedian|Erfahrungswert|Vergleichsprojekt/i)
+    // Keine Entwickler-Artefakte im Text, den der Kunde zu hören bekommt.
+    expect(note).not.toMatch(/SOURCES\.md|\.ts\b|coefficients/i)
+  })
+
+  it('erklärt, wie die Hostzahl zustande kommt', () => {
+    const project = applyGenerated(createEmptyProject(), profileOf({ vmCount: 150 }))
+    const note = project.scenarios.onprem.entries.compute.note
+    expect(note).toContain('VMs je Host')
+    expect(note).toContain('Reserveknoten')
+  })
+
+  it('erklärt den Personalbedarf und den Unterschied zur Cloud', () => {
+    const project = applyGenerated(createEmptyProject(), profileOf())
+    expect(project.scenarios.onprem.entries.staff.note).toContain('je Vollzeitkraft')
+    expect(project.scenarios.cloud.entries.staff.note).toContain('Hardwarebetreuung')
+  })
+
+  it('weist aus, wenn der Speicherbedarf nur abgeleitet ist', () => {
+    const abgeleitet = applyGenerated(createEmptyProject(), profileOf({ storageTB: null }))
+    const angegeben = applyGenerated(createEmptyProject(), profileOf({ storageTB: 200 }))
+    expect(abgeleitet.scenarios.onprem.entries.storage.note).toContain('abgeleitet')
+    expect(angegeben.scenarios.onprem.entries.storage.note).not.toContain('abgeleitet')
+  })
+
+  /**
+   * Die Notiz ist das Versprechen, dass jede Zahl nachrechenbar ist. Wenn die
+   * dort ausgewiesene Multiplikation nicht exakt den Betrag im Feld ergibt,
+   * ist das Versprechen gebrochen — auch bei kleinen Rundungsabweichungen.
+   */
+  it('weist eine Rechnung aus, die exakt den Betrag im Feld ergibt', () => {
+    const project = applyGenerated(createEmptyProject(), profileOf())
+    let geprueft = 0
+
+    const parse = (t: string) => Number(t.replace(/\./g, '').replace(',', '.'))
+
+    for (const scenario of ['onprem', 'cloud'] as const) {
+      for (const entry of Object.values(project.scenarios[scenario].entries)) {
+        // Je aktiver Zeile ein durch Leerzeile getrennter Abschnitt,
+        // in der Reihenfolge CapEx, dann OpEx.
+        const aktive = [entry.capex, entry.opex].filter((l) => l?.active)
+        if (aktive.length === 0) continue
+        const abschnitte = entry.note.split('\n\n').filter((a) => a.includes('×'))
+        expect(abschnitte, `${entry.blockId}/${scenario}`).toHaveLength(aktive.length)
+
+        aktive.forEach((line, i) => {
+          const rechnung = abschnitte[i].split('\n')[1]
+          const zahlen = rechnung.match(/([\d.]+(?:,\d+)?)/g)!
+          expect(
+            Math.round(parse(zahlen[0]) * parse(zahlen[1])),
+            `${entry.blockId}/${scenario}: ${rechnung}`,
+          ).toBe(Math.round(line!.amount))
+          geprueft++
+        })
+      }
+    }
+
+    expect(geprueft).toBeGreaterThan(10)
+  })
+
+  it('verzichtet in allen Notizen auf Entwicklerbegriffe', () => {
+    const project = applyGenerated(createEmptyProject(), profileOf())
+    for (const scenario of ['onprem', 'cloud'] as const) {
+      for (const entry of Object.values(project.scenarios[scenario].entries)) {
+        expect(entry.note, entry.blockId).not.toMatch(/SOURCES\.md|CapEx-Share|null|undefined/i)
+      }
+    }
   })
 
   it('erzeugt ohne anstehenden Refresh keine On-Prem-Investition', () => {

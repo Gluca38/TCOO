@@ -41,6 +41,10 @@ export interface Derived {
   fteCloud: number
 }
 
+function round2(value: number): number {
+  return Math.round(value * 100) / 100
+}
+
 /** Rechnet die Profilmerkmale in die Mengen um, an denen die Kosten hängen. */
 export function derive(profile: Profile): Derived {
   const vmCount =
@@ -53,7 +57,9 @@ export function derive(profile: Profile): Derived {
   const storageTB = profile.storageTB ?? vmCount * GLOBALS.storageTbPerVm
 
   // Die Regulierung bindet Betriebszeit und wirkt deshalb auf den Personalbedarf.
-  const fteOnprem = (vmCount / vmsPerFte) * REGULATION_STAFF_FACTOR[profile.regulation]
+  // Auf zwei Nachkommastellen festgelegt, damit die im Notizfeld ausgewiesene
+  // Rechnung exakt den Betrag ergibt und nicht nur ungefähr.
+  const fteOnprem = round2((vmCount / vmsPerFte) * REGULATION_STAFF_FACTOR[profile.regulation])
 
   return {
     vmCount,
@@ -62,7 +68,7 @@ export function derive(profile: Profile): Derived {
     storageTB,
     vmsPerFte,
     fteOnprem,
-    fteCloud: fteOnprem * GLOBALS.cloudStaffFactor,
+    fteCloud: round2(fteOnprem * GLOBALS.cloudStaffFactor),
   }
 }
 
@@ -124,15 +130,65 @@ function eur(value: number): string {
 function qty(value: number): string {
   return value % 1 === 0
     ? value.toLocaleString('de-DE')
-    : value.toLocaleString('de-DE', { maximumFractionDigits: 1 })
+    : value.toLocaleString('de-DE', { maximumFractionDigits: 2 })
 }
 
 /**
- * Baut den Herleitungstext.
+ * Vorbehalt, der einmal je Block unter der Herleitung steht.
  *
- * Formuliert ausdrücklich als recherchierte Größenordnung. Es wird kein
- * Branchenmedian und kein Erfahrungswert behauptet — die Zahlen stammen aus
- * einer Recherche, und genau das steht da.
+ * Bewusst in der Sprache des Anwenders und ohne Verweis auf Dateien: Die
+ * Notiz wird im Kundengespräch vorgelesen.
+ */
+const RICHTWERT_HINWEIS = 'Richtwert aus Marktdaten — keine Angebotsauskunft.'
+
+/**
+ * Erklärt, wie die Menge zustande kommt.
+ *
+ * Nur dort, wo die Menge nicht schon im Profil steht: Hostzahl und
+ * Personalbedarf werden gerechnet, und genau danach wird im Kundengespräch
+ * als Erstes gefragt.
+ */
+function quantityDerivation(
+  basis: Basis,
+  derived: Derived,
+  profile: Profile,
+  scenario: ScenarioKey,
+): string {
+  switch (basis) {
+    case 'per-host':
+      return (
+        `So kommt die Hostzahl zustande: ${qty(derived.vmCount)} VMs bei ` +
+        `${qty(derived.vmsPerHost)} VMs je Host, aufgerundet, plus ein Reserveknoten.`
+      )
+    case 'per-fte': {
+      const basisSatz =
+        `So kommt der Personalbedarf zustande: ${qty(derived.vmCount)} VMs bei ` +
+        `${qty(derived.vmsPerFte)} VMs je Vollzeitkraft`
+      const reguliert =
+        profile.regulation === 'standard'
+          ? ''
+          : ', erhöht um den Aufwand für Nachweispflichten'
+      const cloudZusatz =
+        scenario === 'cloud'
+          ? `. Für die Cloud ist der Bedarf um ein Viertel niedriger angesetzt`
+          : ''
+      return `${basisSatz}${reguliert}${cloudZusatz}.`
+    }
+    case 'per-tb':
+      return profile.storageTB === null
+        ? `Der Speicherbedarf ist aus der VM-Zahl abgeleitet, da im Profil keine Größe angegeben war.`
+        : ''
+    case 'per-vm':
+      return ''
+  }
+}
+
+/**
+ * Baut den Herleitungstext für das Notizfeld.
+ *
+ * Der Text soll im Kundengespräch vorlesbar sein. Deshalb: keine Dateinamen,
+ * keine Abkürzungen, und ausdrücklich benannt, dass es sich um einen Richtwert
+ * handelt und nicht um eine Preisauskunft.
  */
 function buildNote(
   template: string,
@@ -141,12 +197,26 @@ function buildNote(
   unitCost: number,
   basis: Basis,
   suffix: string,
+  derivation: string,
+  modifierNote: string,
 ): string {
-  return (
-    `${template} ${eur(total)}${suffix} = ${qty(quantity)} ${unitLabel(basis)} × ` +
-    `${eur(unitCost)}${suffix} je Einheit. ` +
-    `Recherchierte Größenordnung, Herleitung und Belastbarkeit in SOURCES.md.`
-  )
+  const kopf = `${template} ${eur(total)}${suffix}`
+  const rechnung = `${qty(quantity)} ${unitLabel(basis)} × ${eur(unitCost)}${suffix}.`
+  return [kopf, [rechnung, derivation, modifierNote].filter(Boolean).join(' ')].join('\n')
+}
+
+/**
+ * Benennt den Aufschlag aus dem Regulierungsgrad.
+ *
+ * Ohne diesen Satz stünde im Notizfeld ein Stückpreis, der sich nicht aus der
+ * Koeffiziententabelle erklären lässt — genau die Art versteckter Annahme,
+ * die das Werkzeug vermeiden soll.
+ */
+function modifierExplanation(blockId: BlockId, modifier: number): string {
+  if (modifier === 1) return ''
+  const prozent = Math.round((modifier - 1) * 100)
+  const was = blockId === 'security' ? 'Security-Aufwand' : 'Migrationsaufwand'
+  return `Der Regulierungsgrad erhöht den ${was} um ${prozent} %.`
 }
 
 /* ------------------------------------------------------------------ *
@@ -168,14 +238,16 @@ function capexYearFor(profile: Profile): number | null {
 
 function makeCapex(
   coefficient: CapexCoefficient,
+  blockId: BlockId,
   derived: Derived,
+  profile: Profile,
   scenario: ScenarioKey,
   year: number,
   modifier: number,
 ): { line: CapexLine; note: string } | null {
   const quantity = quantityFor(coefficient.basis, derived, scenario)
   const unitCost = coefficient.unitCost * modifier
-  const amount = quantity * unitCost
+  const amount = Math.round(quantity * unitCost)
   if (amount <= 0) return null
 
   return {
@@ -188,20 +260,31 @@ function makeCapex(
       usefulLifeYears: coefficient.usefulLifeYears,
       refreshEveryYears: null,
     },
-    note: buildNote(coefficient.noteTemplate, amount, quantity, unitCost, coefficient.basis, ''),
+    note: buildNote(
+      coefficient.noteTemplate,
+      amount,
+      quantity,
+      unitCost,
+      coefficient.basis,
+      '',
+      quantityDerivation(coefficient.basis, derived, profile, scenario),
+      modifierExplanation(blockId, modifier),
+    ),
   }
 }
 
 function makeOpex(
   coefficient: OpexCoefficient,
+  blockId: BlockId,
   derived: Derived,
+  profile: Profile,
   scenario: ScenarioKey,
   modifier: number,
   unitCostOverride?: number,
 ): { line: OpexLine; note: string } | null {
   const quantity = quantityFor(coefficient.basis, derived, scenario)
   const unitCost = (unitCostOverride ?? coefficient.unitCost) * modifier
-  const amount = quantity * unitCost
+  const amount = Math.round(quantity * unitCost)
   if (amount <= 0) return null
 
   return {
@@ -221,7 +304,9 @@ function makeOpex(
       quantity,
       unitCost,
       coefficient.basis,
-      '/Jahr',
+      ' pro Jahr',
+      quantityDerivation(coefficient.basis, derived, profile, scenario),
+      modifierExplanation(blockId, modifier),
     ),
   }
 }
@@ -264,7 +349,7 @@ export function generateScenarios(profile: Profile, settings: Settings): Generat
           // Migration ist keine Hardware und hängt nicht am Refresh-Zyklus.
           const year = blockId === 'migration' ? 1 : capexYear
           if (year !== null) {
-            const made = makeCapex(spec.capex, derived, scenario, year, modifier)
+            const made = makeCapex(spec.capex, blockId, derived, profile, scenario, year, modifier)
             if (made) {
               entry.capex = made.line
               notes.push(made.note)
@@ -274,14 +359,18 @@ export function generateScenarios(profile: Profile, settings: Settings): Generat
 
         if (spec.opex) {
           const override = blockId === 'facility' ? facilityUnitCost(profile) : undefined
-          const made = makeOpex(spec.opex, derived, scenario, modifier, override)
+          const made = makeOpex(spec.opex, blockId, derived, profile, scenario, modifier, override)
           if (made) {
             entry.opex = made.line
             notes.push(made.note)
           }
         }
 
-        entry.note = notes.join('\n')
+        // Leerzeile zwischen Einmal- und laufenden Kosten: sonst laufen zwei
+        // Herleitungen ineinander und man sieht nicht, welche Zahl wozu gehört.
+        // Der Vorbehalt steht einmal am Ende, nicht hinter jeder Zeile.
+        if (notes.length > 0) notes.push(RICHTWERT_HINWEIS)
+        entry.note = notes.join('\n\n')
       }
 
       result[scenario][blockId] = entry
