@@ -3,13 +3,21 @@ import { useStore } from '../../state/store'
 import { deserializeProject, downloadText, serializeProject, suggestedFileName } from '../../io/json'
 import { projectToCsv } from '../../io/csv'
 
-/** Export, Import und Zurücksetzen. */
+/**
+ * Export, Import und Zurücksetzen.
+ *
+ * Bewusst ohne native Browserdialoge: Die App läuft auch eingebettet in einem
+ * abgeschotteten Rahmen, in dem diese blockiert sind und ohne Fehlermeldung
+ * einen negativen Wert liefern — der Knopf wirkt dann kaputt. Die Rückfrage
+ * steht deshalb in der Seite selbst.
+ */
 export function ExportBar() {
   const project = useStore((s) => s.project)
   const replaceProject = useStore((s) => s.replaceProject)
   const reset = useStore((s) => s.reset)
   const fileInput = useRef<HTMLInputElement>(null)
   const [errors, setErrors] = useState<string[] | null>(null)
+  const [askReset, setAskReset] = useState(false)
 
   async function handleFile(file: File) {
     const result = deserializeProject(await file.text())
@@ -47,9 +55,10 @@ export function ExportBar() {
         </Action>
         <Action
           onClick={() => {
-            if (confirm('Alle Eingaben verwerfen und neu beginnen?')) reset()
+            setErrors(null)
+            setAskReset((v) => !v)
           }}
-          title="Alle Eingaben verwerfen"
+          title="Alle Eingaben verwerfen und neu beginnen"
         >
           Neu
         </Action>
@@ -66,6 +75,35 @@ export function ExportBar() {
           e.target.value = ''
         }}
       />
+
+      {askReset && (
+        <div className="absolute right-0 top-full z-40 mt-2 w-80 rounded-md border border-slate-200 bg-white p-3 text-sm shadow-lg">
+          <p className="font-semibold text-slate-900">Alle Eingaben verwerfen?</p>
+          <p className="mt-1 text-slate-600">
+            Beträge, Notizen und das Profil werden gelöscht. Danach können Sie mit dem
+            Beispielszenario oder einem neuen Profil beginnen.
+          </p>
+          <div className="mt-3 flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setAskReset(false)}
+              className="rounded-md border border-slate-300 px-2.5 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
+            >
+              Abbrechen
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                reset()
+                setAskReset(false)
+              }}
+              className="rounded-md bg-accent-600 px-2.5 py-1.5 text-sm font-medium text-white transition hover:bg-accent-700"
+            >
+              Verwerfen
+            </button>
+          </div>
+        </div>
+      )}
 
       {errors && (
         <div className="absolute right-0 top-full z-40 mt-2 w-96 rounded-md border border-red-200 bg-red-50 p-3 text-sm shadow-lg">

@@ -11,6 +11,7 @@ export function BlockList() {
   const blocks = useStore((s) => s.project.blocks)
   const addBlock = useStore((s) => s.addBlock)
   const [open, setOpen] = useState<Set<BlockId>>(new Set())
+  const [neuerBlock, setNeuerBlock] = useState<string | null>(null)
 
   function toggle(id: BlockId) {
     setOpen((prev) => {
@@ -69,16 +70,49 @@ export function BlockList() {
         ))}
       </div>
 
-      <button
-        type="button"
-        onClick={() => {
-          const name = prompt('Name des neuen Kostenblocks')
-          if (name?.trim()) addBlock(name.trim())
-        }}
-        className="mt-3 rounded-md border border-dashed border-slate-300 px-3 py-1.5 text-sm text-slate-600 transition hover:border-accent-400 hover:text-accent-700"
-      >
-        + Kostenblock hinzufügen
-      </button>
+      {neuerBlock === null ? (
+        <button
+          type="button"
+          onClick={() => setNeuerBlock('')}
+          className="mt-3 rounded-md border border-dashed border-slate-300 px-3 py-1.5 text-sm text-slate-600 transition hover:border-accent-400 hover:text-accent-700"
+        >
+          + Kostenblock hinzufügen
+        </button>
+      ) : (
+        <form
+          className="mt-3 flex flex-wrap items-center gap-2"
+          onSubmit={(e) => {
+            e.preventDefault()
+            if (neuerBlock.trim()) addBlock(neuerBlock.trim())
+            setNeuerBlock(null)
+          }}
+        >
+          <input
+            autoFocus
+            value={neuerBlock}
+            onChange={(e) => setNeuerBlock(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') setNeuerBlock(null)
+            }}
+            placeholder="Name des neuen Kostenblocks"
+            className="w-72 rounded-md border border-slate-300 px-2.5 py-1.5 text-sm focus:border-accent-500 focus:outline-none focus:ring-2 focus:ring-accent-100"
+          />
+          <button
+            type="submit"
+            disabled={!neuerBlock.trim()}
+            className="rounded-md bg-accent-600 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-accent-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+          >
+            Hinzufügen
+          </button>
+          <button
+            type="button"
+            onClick={() => setNeuerBlock(null)}
+            className="text-sm text-slate-500 hover:text-slate-800"
+          >
+            Abbrechen
+          </button>
+        </form>
+      )}
     </section>
   )
 }
@@ -100,6 +134,7 @@ function BlockRow({
   const setBlockOrigin = useStore((s) => s.setBlockOrigin)
   const scenarios = useStore((s) => s.project.scenarios)
   const [renaming, setRenaming] = useState(false)
+  const [entfernenBestaetigen, setEntfernenBestaetigen] = useState(false)
 
   // Schwächster Herkunftsstatus im Block — er bestimmt, wie belastbar die
   // Blocksumme insgesamt ist.
@@ -217,19 +252,45 @@ function BlockRow({
         </span>
 
         <div className="flex w-20 justify-end gap-1 text-xs text-slate-400">
-          <button type="button" onClick={() => setRenaming(true)} className="hover:text-slate-700" title="Umbenennen">
-            ✎
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              if (confirm(`Block „${block.name}" mit allen Eingaben entfernen?`)) removeBlock(blockId)
-            }}
-            className="hover:text-red-600"
-            title="Block entfernen"
-          >
-            ✕
-          </button>
+          {entfernenBestaetigen ? (
+            <>
+              <button
+                type="button"
+                onClick={() => removeBlock(blockId)}
+                className="rounded bg-red-600 px-1.5 py-0.5 text-[10px] font-medium text-white hover:bg-red-700"
+                title={`Block „${block.name}" mit allen Eingaben entfernen`}
+              >
+                entfernen
+              </button>
+              <button
+                type="button"
+                onClick={() => setEntfernenBestaetigen(false)}
+                className="hover:text-slate-700"
+                title="Abbrechen"
+              >
+                ✕
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={() => setRenaming(true)}
+                className="hover:text-slate-700"
+                title="Umbenennen"
+              >
+                ✎
+              </button>
+              <button
+                type="button"
+                onClick={() => setEntfernenBestaetigen(true)}
+                className="hover:text-red-600"
+                title="Block entfernen"
+              >
+                ✕
+              </button>
+            </>
+          )}
         </div>
       </div>
 
