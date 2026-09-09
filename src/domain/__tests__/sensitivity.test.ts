@@ -102,6 +102,48 @@ describe('Sensitivität', () => {
     expect(eintrag.uncertainty).toBeGreaterThan(0.05)
   })
 
+  /**
+   * Regression: Der Tornado bekam das Projekt aus dem Speicher statt die
+   * Variante mit verschobener Laufzeit. Ein verkürzter Betrachtungszeitraum
+   * blieb dadurch ohne jede Wirkung auf das Diagramm, obwohl er die
+   * Blocksummen erheblich verändert.
+   */
+  it('reagiert auf einen verkürzten Betrachtungszeitraum', () => {
+    const p = createReferenceProject()
+    const lang = tornado(p, 'cashflow', 1, 5)
+    const kurz = tornado(withParameters(p, { horizonYears: 2 }), 'cashflow', 1, 5)
+
+    expect(kurz.base).not.toBeCloseTo(lang.base, 0)
+    // Weniger Jahre bedeuten kleinere Blocksummen und damit kleinere Ausschläge.
+    expect(kurz.entries[0].swing).toBeLessThan(lang.entries[0].swing)
+  })
+
+  it('misst wahlweise die nominale Differenz oder den Barwert', () => {
+    const p = createReferenceProject()
+    const nominal = tornado(p, 'cashflow', 1, 5, 'nominal')
+    const barwert = tornado(p, 'cashflow', 1, 5, 'npv')
+
+    expect(nominal.base).toBeCloseTo(compare(p, 'cashflow').delta, 6)
+    expect(barwert.base).toBeCloseTo(compare(p, 'cashflow').npvDelta, 6)
+    expect(barwert.base).not.toBeCloseTo(nominal.base, 0)
+  })
+
+  it('lässt den Diskontsatz nur auf der Barwertbasis wirken', () => {
+    const p = createReferenceProject()
+    const andererSatz = withParameters(p, { discountRate: 0.15 })
+
+    // Nominal: der Zinssatz geht nicht ein, das Ergebnis bleibt gleich.
+    expect(tornado(andererSatz, 'cashflow', 1, 5, 'nominal').base).toBeCloseTo(
+      tornado(p, 'cashflow', 1, 5, 'nominal').base,
+      6,
+    )
+    // Barwert: er geht ein, das Ergebnis ändert sich.
+    expect(tornado(andererSatz, 'cashflow', 1, 5, 'npv').base).not.toBeCloseTo(
+      tornado(p, 'cashflow', 1, 5, 'npv').base,
+      0,
+    )
+  })
+
   it('sortiert nach Wirkung und begrenzt auf die Top-Einträge', () => {
     const { entries } = tornado(createReferenceProject(), 'cashflow', 1, 3)
     expect(entries).toHaveLength(3)

@@ -16,7 +16,8 @@ import {
 import { useStore } from '../../state/store'
 import { useComparison } from '../useComparison'
 import { calendarYear, discountFactor } from '../../domain/calc'
-import { tornado } from '../../domain/sensitivity'
+import { tornado, type TornadoBasis } from '../../domain/sensitivity'
+import type { Project } from '../../domain/types'
 import { eur, eurSigned, num } from '../../format'
 
 /**
@@ -273,12 +274,26 @@ function TornadoLegend({
   )
 }
 
-export function TornadoChart({ multiplier }: { multiplier: number }) {
-  const project = useStore((s) => s.project)
+/**
+ * Tornado.
+ *
+ * Bekommt das Projekt als Eigenschaft, statt es sich aus dem Store zu holen:
+ * Nur so wirken die Regler für Laufzeit und Diskontsatz auch auf das
+ * Diagramm und nicht bloß auf die Kennzahlen daneben.
+ */
+export function TornadoChart({
+  project,
+  basis,
+  multiplier,
+}: {
+  project: Project
+  basis: TornadoBasis
+  multiplier: number
+}) {
   const view = project.settings.view
   const { base, entries } = useMemo(
-    () => tornado(project, view, multiplier, 5),
-    [project, view, multiplier],
+    () => tornado(project, view, multiplier, 5, basis),
+    [project, view, multiplier, basis],
   )
 
   const data = entries.map((e) => ({
@@ -303,7 +318,9 @@ export function TornadoChart({ multiplier }: { multiplier: number }) {
   return (
     <ChartCard
       title="Woran das Ergebnis wackelt"
-      description={`Ausgangswert: ${eurSigned(base)}. Die Bandbreite je Block folgt der Herkunft seiner Werte${
+      description={`Ausschlag auf die ${
+        basis === 'npv' ? 'Barwertdifferenz' : 'Gesamtdifferenz'
+      }, Ausgangswert ${eurSigned(base)}. Die Bandbreite je Block folgt der Herkunft seiner Werte${
         multiplier !== 1 ? `, skaliert mit Faktor ${num(multiplier, 2)}` : ''
       }.`}
     >

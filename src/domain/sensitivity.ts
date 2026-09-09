@@ -31,6 +31,15 @@ export function uncertaintyOf(line: CapexLine | OpexLine | null | undefined): nu
   return line.uncertainty ?? DEFAULT_UNCERTAINTY[line.origin]
 }
 
+/**
+ * Größe, auf die der Ausschlag gemessen wird.
+ *
+ * Der Tornado bewertet immer die Kennzahl, die der Anwender gerade liest.
+ * In die nominale Differenz geht kein Diskontfaktor ein — der Diskontsatz
+ * wirkt deshalb nur in der Barwertdarstellung auf das Diagramm.
+ */
+export type TornadoBasis = 'nominal' | 'npv'
+
 export interface TornadoEntry {
   scenario: ScenarioKey
   scenarioName: string
@@ -147,15 +156,22 @@ function weakestOrigin(capex: CapexLine | null, opex: OpexLine | null): Origin {
  * @param multiplier Globaler Regler. 1,0 = die Bandbreiten aus dem
  *   Herkunftsstatus, 2,0 = doppelt so breit. Er skaliert die Bandbreiten,
  *   ersetzt sie nicht.
+ * @param basis Gemessene Kennzahl — nominale Differenz oder Barwertdifferenz.
  */
 export function tornado(
   project: Project,
   view: CostView,
   multiplier = 1,
   topN = 5,
+  basis: TornadoBasis = 'nominal',
 ): { base: number; entries: TornadoEntry[] } {
+  const measure = (p: Project): number => {
+    const r = compare(p, view)
+    return basis === 'npv' ? r.npvDelta : r.delta
+  }
+
   const baseResult = compare(project, view)
-  const base = baseResult.delta
+  const base = basis === 'npv' ? baseResult.npvDelta : baseResult.delta
   const entries: TornadoEntry[] = []
 
   for (const scenario of ['onprem', 'cloud'] as ScenarioKey[]) {
@@ -177,8 +193,8 @@ export function tornado(
       const spread = effectiveUncertainty(project, scenario, block.id, view)
       if (spread === 0) continue
 
-      const low = compare(variedProject(project, scenario, block.id, -1, multiplier), view).delta
-      const high = compare(variedProject(project, scenario, block.id, 1, multiplier), view).delta
+      const low = measure(variedProject(project, scenario, block.id, -1, multiplier))
+      const high = measure(variedProject(project, scenario, block.id, 1, multiplier))
 
       entries.push({
         scenario,

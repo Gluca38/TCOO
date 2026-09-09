@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useStore } from '../../state/store'
 import { compare } from '../../domain/compare'
-import { withParameters } from '../../domain/sensitivity'
+import { withParameters, type TornadoBasis } from '../../domain/sensitivity'
 import { TornadoChart } from './Charts'
 import { breakEvenLabel, eurSigned, num } from '../../format'
 
@@ -21,14 +21,26 @@ export function Sensitivity() {
   const effectiveHorizon = horizon ?? project.settings.horizonYears
   const touched = rate !== null || horizon !== null
 
+  // Die Variante wird einmal gebildet und sowohl für die Kennzahlen als auch
+  // für den Tornado verwendet — sonst wirken die Regler nur auf die eine
+  // Hälfte dieses Abschnitts.
+  const variantProject = useMemo(
+    () => withParameters(project, { discountRate: effectiveRate, horizonYears: effectiveHorizon }),
+    [project, effectiveRate, effectiveHorizon],
+  )
+
+  /**
+   * Der Tornado misst, was oben angezeigt wird. In die nominale Differenz
+   * geht kein Diskontfaktor ein — der Zinsregler bewegt das Diagramm
+   * deshalb nur in der Barwertdarstellung.
+   */
+  const basis: TornadoBasis =
+    project.settings.discounted && project.settings.view === 'cashflow' ? 'npv' : 'nominal'
+
   const baseline = useMemo(() => compare(project, project.settings.view), [project])
   const variant = useMemo(
-    () =>
-      compare(
-        withParameters(project, { discountRate: effectiveRate, horizonYears: effectiveHorizon }),
-        project.settings.view,
-      ),
-    [project, effectiveRate, effectiveHorizon],
+    () => compare(variantProject, project.settings.view),
+    [variantProject, project.settings.view],
   )
 
   return (
@@ -43,7 +55,7 @@ export function Sensitivity() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[1fr_380px]">
-        <TornadoChart multiplier={multiplier} />
+        <TornadoChart project={variantProject} basis={basis} multiplier={multiplier} />
 
         <div className="space-y-4">
           <div className="rounded-lg border border-slate-200 bg-white p-4">
@@ -59,7 +71,11 @@ export function Sensitivity() {
               max={15}
               step={0.5}
               suffix=" %"
-              baseline={`Ausgangswert ${num(project.settings.discountRate * 100)} %`}
+              baseline={
+                basis === 'npv'
+                  ? `Ausgangswert ${num(project.settings.discountRate * 100)} %`
+                  : `Ausgangswert ${num(project.settings.discountRate * 100)} % · wirkt auf die Kennzahlen, nicht auf das Diagramm — in die nominale Differenz geht kein Zinssatz ein. Oben auf „Barwert" umschalten, damit er auch dort wirkt.`
+              }
               onChange={(v) => setRate(v / 100)}
             />
             <Slider
