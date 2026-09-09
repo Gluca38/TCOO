@@ -75,6 +75,33 @@ describe('Sensitivität', () => {
     expect(doppelt).toBeCloseTo(einfach * 2, 6)
   })
 
+  /**
+   * Ein Block kann eine bestätigte Investition und daneben geschätzte
+   * laufende Kosten tragen. Die ausgewiesene Bandbreite muss dann zwischen
+   * beiden liegen — der schlichte Maximalwert würde den Block als weit
+   * unsicherer darstellen, als er ist, und die Legende widerspräche den
+   * gezeichneten Balken.
+   */
+  it('gewichtet die ausgewiesene Bandbreite nach Kostenanteil', () => {
+    const p = createEmptyProject()
+    p.settings.defaultEscalation = 0
+    p.scenarios.onprem.entries.compute.capex = {
+      active: true, amount: 500_000, origin: 'confirmed', uncertainty: null,
+      year: 1, usefulLifeYears: 5, refreshEveryYears: null,
+    }
+    p.scenarios.onprem.entries.compute.opex = {
+      active: true, amount: 20_000, origin: 'estimated', uncertainty: null,
+      period: 'year', startYear: 1, endYear: null, escalation: 0,
+    }
+
+    const eintrag = tornado(p, 'cashflow', 1, 99).entries.find((e) => e.blockId === 'compute')!
+    // CapEx 500.000 mit ±5 %, OpEx 100.000 über fünf Jahre mit ±35 %
+    // → gewichtet (500.000 × 0,05 + 100.000 × 0,35) / 600.000 = 0,1
+    expect(eintrag.uncertainty).toBeCloseTo(0.1, 6)
+    expect(eintrag.uncertainty).toBeLessThan(0.35)
+    expect(eintrag.uncertainty).toBeGreaterThan(0.05)
+  })
+
   it('sortiert nach Wirkung und begrenzt auf die Top-Einträge', () => {
     const { entries } = tornado(createReferenceProject(), 'cashflow', 1, 3)
     expect(entries).toHaveLength(3)

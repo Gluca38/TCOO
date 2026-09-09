@@ -32,22 +32,21 @@ export function YearTable() {
     return on.map((v, i) => (v - cl[i]) * factor(i + 1))
   }
 
-  function summaryRow(pick: 'capex' | 'opex' | 'total' | 'cumulative'): number[] {
+  /**
+   * Summenzeile in der gewählten Ansicht.
+   *
+   * Die kumulierte Zeile entsteht bewusst nicht hier, sondern durch
+   * Aufsummieren der Gesamtzeile — nur so stimmt sie auch in der
+   * Differenzansicht mit den darüberstehenden Werten überein.
+   */
+  function summaryRow(pick: 'capex' | 'opex' | 'total'): number[] {
     const on = result.onprem
     const cl = result.cloud
     const get = (s: typeof on) =>
-      pick === 'capex' ? s.capexByYear
-      : pick === 'opex' ? s.opexByYear
-      : pick === 'total' ? s.totalByYear
-      : s.cumulativeByYear
+      pick === 'capex' ? s.capexByYear : pick === 'opex' ? s.opexByYear : s.totalByYear
 
     if (mode === 'onprem') return get(on).map((v, i) => v * factor(i + 1))
     if (mode === 'cloud') return get(cl).map((v, i) => v * factor(i + 1))
-    // In der Differenzansicht wird die kumulierte Zeile aus den Differenzen gebildet.
-    if (pick === 'cumulative') {
-      const deltas = get(on).map((v, i) => (v - get(cl)[i]) * factor(i + 1))
-      return deltas
-    }
     return get(on).map((v, i) => (v - get(cl)[i]) * factor(i + 1))
   }
 

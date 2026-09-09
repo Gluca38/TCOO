@@ -49,8 +49,12 @@ export function ScenarioEntry({ scenario, blockId }: { scenario: ScenarioKey; bl
       <div className="rounded border border-slate-150 bg-slate-50/60 p-2.5">
         <Checkbox
           checked={!!capex?.active}
+          // Nicht auf null setzen: Eine bewusst abgewählte Zeile ist eine
+          // eigene Entscheidung und muss ein erneutes Generieren überstehen.
+          // Als inaktive, angepasste Zeile bleibt sie erhalten und fließt in
+          // keine Berechnung ein.
           onChange={(checked) =>
-            checked ? updateCapex(scenario, blockId, { active: true }) : updateCapex(scenario, blockId, null)
+            updateCapex(scenario, blockId, { active: checked, origin: 'adjusted' })
           }
           label={
             <span className="flex items-center gap-2">
@@ -123,7 +127,7 @@ export function ScenarioEntry({ scenario, blockId }: { scenario: ScenarioKey; bl
         <Checkbox
           checked={!!opex?.active}
           onChange={(checked) =>
-            checked ? updateOpex(scenario, blockId, { active: true }) : updateOpex(scenario, blockId, null)
+            updateOpex(scenario, blockId, { active: checked, origin: 'adjusted' })
           }
           label={
             <span className="flex items-center gap-2">

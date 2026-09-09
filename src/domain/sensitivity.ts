@@ -1,5 +1,6 @@
 import type { CapexLine, CostView, OpexLine, Origin, Project, ScenarioKey } from './types'
 import { compare } from './compare'
+import { computeScenario } from './calc'
 
 /**
  * Sensitivitätsanalyse auf Basis der Datenherkunft.
@@ -41,7 +42,7 @@ export interface TornadoEntry {
   high: number
   /** Größter Ausschlag gegenüber dem Ausgangswert. Sortierkriterium. */
   swing: number
-  /** Wirksame Bandbreite des Blocks, für die Beschriftung. */
+  /** Nach Kostenanteil gewichtete Bandbreite des Blocks, für die Beschriftung. */
   uncertainty: number
   /** Schwächster Herkunftsstatus im Block — bestimmt die Bandbreite. */
   origin: Origin
@@ -72,6 +73,60 @@ function variedProject(
     entry.opex.amount *= 1 + direction * uncertaintyOf(entry.opex) * multiplier
   }
   return clone
+}
+
+/**
+ * Nach Kostenanteil gewichtete Bandbreite eines Blocks.
+ *
+ * Ein Block kann eine bestätigte Investition und daneben geschätzte laufende
+ * Kosten tragen. Was er insgesamt zum Wackeln beiträgt, hängt davon ab,
+ * welcher Anteil wie schwer wiegt.
+ */
+function effectiveUncertainty(
+  project: Project,
+  scenario: ScenarioKey,
+  blockId: string,
+  view: CostView,
+): number {
+  const entry = project.scenarios[scenario].entries[blockId]
+  if (!entry) return 0
+
+  // Beitrag der beiden Zeilen über den gesamten Zeitraum, in der gewählten Sicht.
+  const nurCapex = onlyLine(project, scenario, blockId, 'capex')
+  const nurOpex = onlyLine(project, scenario, blockId, 'opex')
+  const capexAnteil = Math.abs(blockSum(nurCapex, scenario, blockId, view))
+  const opexAnteil = Math.abs(blockSum(nurOpex, scenario, blockId, view))
+  const summe = capexAnteil + opexAnteil
+  if (summe === 0) return 0
+
+  return (
+    (capexAnteil * uncertaintyOf(entry.capex) + opexAnteil * uncertaintyOf(entry.opex)) / summe
+  )
+}
+
+/** Projektkopie, in der von einem Block nur die genannte Zeile aktiv ist. */
+function onlyLine(
+  project: Project,
+  scenario: ScenarioKey,
+  blockId: string,
+  keep: 'capex' | 'opex',
+): Project {
+  const clone: Project = structuredClone(project)
+  const entry = clone.scenarios[scenario].entries[blockId]
+  if (!entry) return clone
+  if (keep === 'capex' && entry.opex) entry.opex.active = false
+  if (keep === 'opex' && entry.capex) entry.capex.active = false
+  return clone
+}
+
+function blockSum(
+  project: Project,
+  scenario: ScenarioKey,
+  blockId: string,
+  view: CostView,
+): number {
+  const series = computeScenario(project, scenario, view)
+  return (series.byBlock[blockId] ?? []).reduce((a, b) => a + b, 0)
 }
 
 /** Rangfolge der Herkunftsstati von unsicher nach sicher. */
@@ -114,7 +169,12 @@ export function tornado(
       const entry = project.scenarios[scenario].entries[block.id]
       if (!entry) continue
 
-      const spread = Math.max(uncertaintyOf(entry.capex), uncertaintyOf(entry.opex))
+      // Die Balken variieren jede Zeile mit ihrer eigenen Bandbreite. Für die
+      // Beschriftung muss daraus ein Blockwert werden — und zwar gewichtet
+      // nach Kostenanteil. Der schlichte Maximalwert würde einen Block als
+      // hochgradig unsicher ausweisen, dessen dominierender Anteil längst
+      // bestätigt ist.
+      const spread = effectiveUncertainty(project, scenario, block.id, view)
       if (spread === 0) continue
 
       const low = compare(variedProject(project, scenario, block.id, -1, multiplier), view).delta

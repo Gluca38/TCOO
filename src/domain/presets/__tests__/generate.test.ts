@@ -192,6 +192,26 @@ describe('Zusammenführung — die Kernregel', () => {
     )
   })
 
+  /**
+   * Eine abgewählte Kostenzeile ist eine Entscheidung des Beraters, kein
+   * fehlender Wert. Sie darf ein erneutes Generieren überstehen — sonst
+   * taucht die gerade entfernte Investition beim nächsten Lauf wieder auf.
+   */
+  it('bringt eine bewusst abgewählte Zeile nicht zurück', () => {
+    const project = applyGenerated(createEmptyProject(), profileOf())
+    expect(project.scenarios.onprem.entries.compute.capex?.active).toBe(true)
+
+    // So wirkt das Abwählen im UI: inaktiv, und damit eine eigene Angabe.
+    project.scenarios.onprem.entries.compute.capex = {
+      ...project.scenarios.onprem.entries.compute.capex!,
+      active: false,
+      origin: 'adjusted',
+    }
+
+    const danach = applyGenerated(project, profileOf({ vmCount: 400 }))
+    expect(danach.scenarios.onprem.entries.compute.capex?.active).toBe(false)
+  })
+
   it('lässt selbst angelegte Blöcke unberührt', () => {
     const project = createEmptyProject()
     project.blocks.push({ id: 'eigener', name: 'Eigener Block', enabled: true, order: 99 })
