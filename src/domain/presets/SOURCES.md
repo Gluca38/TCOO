@@ -3,7 +3,8 @@
 Diese Datei dokumentiert, woher jeder Wert in `coefficients.ts` stammt.
 Sie ist der Prüfpfad für jede erzeugte Zahl.
 
-**Stand der Recherche: 8. September 2026**
+**Stand der Recherche: 8. September 2026, mit Nachtrag vom 11. September 2026
+zur RAM-/NAND-Preiskrise (siehe Abschnitt 2 und 5).**
 
 ## Wie diese Werte einzuordnen sind
 
@@ -112,7 +113,8 @@ und gehören in den Block Compute, nicht hierher.
 
 ## 2. Serverhardware
 
-- **Wert: 18.000 € je Host** (2 Sockel, Rack, inkl. RAM und lokalen Medien)
+- **Basiswert: 24.000 € je Host** (2 Sockel, Rack, inkl. RAM und lokalen
+  Medien), Mitte der Preisliste
 - Quelle: Dell PowerEdge Listenpreise Deutschland, über Websuche
   (https://www.dell.com/de-de/shop/poweredge-server/sr/servers/2-sockel)
   - PowerEdge R760XS: 14.543 €
@@ -120,8 +122,30 @@ und gehören in den Block Compute, nicht hierher.
   - PowerEdge R770: 30.135 €
 - **Unsicherheit: mittel.** Das sind **Listenpreise**. Im Enterprise-Einkauf
   liegen die tatsächlichen Preise erfahrungsgemäß deutlich darunter, wie weit,
-  ist ohne Angebot nicht belegbar. Der gewählte Wert liegt bewusst im unteren
-  Drittel der Liste.
+  ist ohne Angebot nicht belegbar.
+
+### Nachtrag 11. September 2026: RAM-Preiskrise
+
+- **Verwendet: 32.000 € je Host** — Basiswert + 30 %.
+- Die DRAM-Vertragspreise sind laut TrendForce 2026 dramatisch gestiegen:
+  +90–95 % QoQ in Q1, +58–63 % in Q2, +13–18 % in Q3
+  (https://www.trendforce.com/presscenter/news/20260703-13134.html,
+  https://www.trendforce.com/presscenter/news/20260331-12995.html). Ein
+  64-GB-DDR5-RDIMM hat sich zwischen Ende 2024 und Mitte 2026 Berichten
+  zufolge versechsfacht
+  (https://en.wikipedia.org/wiki/2025%E2%80%93present_global_memory_supply_shortage).
+- Konkret bei Dell: Die PowerEdge-Listenpreise wurden zum 30. März 2026 um
+  rund 17 % angehoben, bei speicherintensiven Konfigurationen um bis zu 30 %
+  (Marktbeobachtung, u. a. https://www.tomsguide.com/computing/ramageddon-lenovo-and-dell-tipped-to-raise-prices-soon,
+  https://datacenterdisk.com/news/memory-chip-shortage-2026-server-ram-prices).
+  Ein Host für 20 VMs braucht überdurchschnittlich viel RAM und liegt damit
+  im oberen Teil dieser Spanne — deshalb der volle 30-%-Aufschlag statt nur
+  17 %.
+- **Unsicherheit: schwach.** Die zugrunde liegenden Prozentsätze stammen aus
+  Marktberichten, nicht aus einem konkreten, heute eingeholten Angebot. Die
+  Lage ist Anfang Q3 2026 weiterhin in Bewegung (SK Hynix meldet DRAM/NAND-
+  Kapazität für 2026 als ausverkauft); dieser Wert sollte bei der nächsten
+  Überarbeitung erneut geprüft werden.
 
 ---
 
@@ -224,6 +248,27 @@ schlechtesten belegten. Beide sind deshalb im Profildialog überschreibbar.
   Vervierfachung der Drei-Jahres-TCO binnen eines Jahres. **Dieser Wert
   veraltet schneller als alle anderen.**
 
+### Nachtrag 11. September 2026: NAND-Preiskrise, jetzt beziffert
+
+- **Verwendet: 2.800 €/TB nutzbar** — bisheriger Wert verdoppelt.
+- Enterprise-SSD-Vertragspreise sind laut Gartner im ersten Halbjahr 2026 um
+  50–200 % gestiegen, laut Astute Group um rund 80 % allein in Q1 2026
+  (https://www.astutegroup.com/news/memory-shortages/ai-memory-shortage-drives-enterprise-ssd-prices-up-80/).
+  Ein konkretes 30-TB-Modell (reine Medien, ohne RAID/Controller-Aufschlag)
+  ist von rund 3.062 $ (Q2/2025) auf rund 10.950 $ (Q1/2026) gestiegen,
+  +257 % (Marktbeobachtung, u. a.
+  https://www.blocksandfiles.com/flash/2026/02/27/all-flash-array-revenue-boost-puts-netapp-on-track-to-strongest-year-yet/4092717).
+  NetApp hat seine Preise angehoben und weitere Erhöhungen angekündigt.
+- Nur eine Verdopplung statt der vollen recherchierten Steigerung, weil der
+  bisherige Wert bereits einen Overhead-Faktor 1,6 für Controller, Gehäuse
+  und Ersteinrichtung enthält — diese Bestandteile sind von der reinen
+  Speicherpreiskrise weniger betroffen als die NAND-Medien selbst, die den
+  Löwenanteil der beobachteten Steigerung tragen.
+- **Unsicherheit: schwach, weiterhin die volatilste Zahl der Tabelle.** Die
+  Bandbreite der Quellen reicht von +50 % bis +900 %, je nach Kapazität,
+  Zeitraum und ob Medien oder Fertigsystem gemeint sind. Ein konkretes
+  Angebot ersetzt diesen Wert am dringendsten von allen in dieser Tabelle.
+
 ### Cloud
 
 - **Wert: 1.100 €/TB/Jahr**
@@ -271,7 +316,7 @@ Unsicherheit durchgehend **schwach**:
 | Block | Ansatz | Begründung |
 |---|---|---|
 | Datenbankservices | 15 % des Compute-Werts | Datenbanken laufen typischerweise auf einem Teil der Umgebung; in der Cloud höher wegen Managed-Service-Aufschlag |
-| Netzwerk | 220 €/VM/Jahr on-prem · in der Cloud zusätzlich Egress-Anteil | Switching, Anbindung, Load Balancing |
+| Netzwerk | 600 €/VM CapEx + 120 €/VM/Jahr OpEx on-prem · in der Cloud zusätzlich Egress-Anteil | Switching, Anbindung, Load Balancing. CapEx zum 11.9.2026 um 20 % angehoben: Dell'Oro beziffert Campus-Switch-Listenpreise für Q2/2026 mit +19 % ggü. Vorjahr und erwartet 2026 insgesamt über 20 % Aufschlag bei Netzwerk-Hardware wegen derselben Speicherpreiskrise wie bei Servern, nur schwächer ausgeprägt (https://convergedigest.com/delloro-ai-component-shortages-campus-switch-prices-2q-2026/, https://www.networkworld.com/article/4113772/samsung-warns-of-memory-shortages-driving-industry-wide-price-surge-in-2026.html) |
 | Backup / DR | 12 % des Storage-Werts | Zweitkopie, Medien, Zweitstandort |
 | Wartung und Support | 12 % des Hardware-CapEx je Jahr | Übliche Größenordnung für Herstellersupport |
 | Security & Compliance | 180 €/VM/Jahr, Aufschlag je Regulierungsgrad | Werkzeuge, Audits, Penetrationstests |
@@ -289,7 +334,15 @@ Modellannahmen ohne belegte Quelle.
 Nach Wirkung auf das Ergebnis sortiert:
 
 1. **VMs je Host** und **VMs je Vollzeitkraft** — größter Hebel, schwächste Beleglage
-2. **Storage-Preis On-Premises** — derzeit extrem volatil
-3. **Serverpreis je Host** — Listenpreis durch echte Angebotspreise ersetzen
-4. **Cloud-Compute je VM** — durch ein konkretes Angebot ersetzen
+2. **Storage-Preis On-Premises** — am 11.9.2026 anhand von Marktdaten zur
+   NAND-Preiskrise verdoppelt (900 €/TB Rohkapazität unverändert,
+   2.800 €/TB nutzbar), bleibt aber die volatilste Zahl der Tabelle und
+   sollte bei nächster Gelegenheit durch ein konkretes Angebot ersetzt werden
+3. **Serverpreis je Host** — am 11.9.2026 um 30 % auf 32.000 € angehoben
+   (RAM-Preiskrise); weiterhin Listenpreis, kein Angebotspreis
+4. **Cloud-Compute je VM** — durch ein konkretes Angebot ersetzen. Bisher
+   nicht angehoben: Hyperscaler geben laut Recherche kurzfristige
+   Preisspitzen bei Vorprodukten eher über amortisierte Flotten weiter als
+   direkt an Endkunden — sollte aber bei nächster Gelegenheit anhand
+   aktueller AWS/Azure/OTC-Preisankündigungen gegengeprüft werden
 5. **Personalfaktor Cloud** — der am schwersten belegbare Vorteil überhaupt

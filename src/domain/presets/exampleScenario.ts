@@ -115,12 +115,13 @@ export function createExampleProject(): Project {
 
   project.meta.title = 'Beispiel: Hardware-Refresh gegen Migration in die Public Cloud'
   project.meta.notes =
-    'Beispieldaten zum Kennenlernen. Die bestehende Serverlandschaft erreicht in Jahr 3 das ' +
+    'Beispieldaten zum Kennenlernen. Die bestehende Serverlandschaft erreicht jetzt das ' +
     'Ende der Nutzungsdauer; verglichen wird die Ersatzinvestition mit einer Migration in die ' +
     'Public Cloud. Jeder Block trägt in der Notiz eine Erklärung, was dort hineingehört.'
 
   project.scenarios.onprem.notes =
-    'Weiterbetrieb im eigenen Rechenzentrum mit Ersatzinvestition zum Ende der Nutzungsdauer.'
+    'Weiterbetrieb im eigenen Rechenzentrum mit Ersatzinvestition zum Ende der Nutzungsdauer, ' +
+    'die jetzt ansteht.'
   project.scenarios.cloud.notes =
     'Migration in die Public Cloud mit einmaligem Umstellungsaufwand im ersten Jahr.'
 
