@@ -7,7 +7,6 @@ import { SCHEMA_VERSION } from './types'
  */
 export const DEFAULT_BLOCKS: ReadonlyArray<Omit<Block, 'order'>> = [
   { id: 'compute', name: 'Compute / Server', enabled: true },
-  { id: 'database', name: 'Datenbankservices', enabled: true },
   { id: 'storage', name: 'Storage', enabled: true },
   { id: 'network', name: 'Netzwerk (inkl. Traffic/Egress)', enabled: true },
   { id: 'backup', name: 'Backup / Disaster Recovery', enabled: true },

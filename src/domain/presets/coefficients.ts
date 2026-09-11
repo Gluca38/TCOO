@@ -239,35 +239,6 @@ export const BLOCK_COEFFICIENTS: Record<string, BlockCoefficient> = {
     },
   },
 
-  /* ── Datenbankservices ────────────────────────────────────────────── */
-  database: {
-    onprem: {
-      // [schwach] Modellannahme: dedizierte Datenbankserver für einen Teil der Umgebung.
-      capex: {
-        unitCost: 600,
-        basis: 'per-vm',
-        usefulLifeYears: 5,
-        noteTemplate: 'Dedizierte Datenbankserver:',
-      },
-      // [schwach] Modellannahme: Datenbanklizenzen und Support.
-      opex: {
-        unitCost: 60,
-        basis: 'per-vm',
-        escalation: null,
-        noteTemplate: 'Datenbanklizenzen und Support:',
-      },
-    },
-    cloud: {
-      // [schwach] Modellannahme: Managed-Service-Aufschlag gegenüber Eigenbetrieb.
-      opex: {
-        unitCost: 340,
-        basis: 'per-vm',
-        escalation: null,
-        noteTemplate: 'Managed-Datenbankdienste inklusive Hochverfügbarkeit:',
-      },
-    },
-  },
-
   /* ── Storage ──────────────────────────────────────────────────────── */
   storage: {
     onprem: {

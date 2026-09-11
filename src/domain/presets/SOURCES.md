@@ -315,7 +315,6 @@ Unsicherheit durchgehend **schwach**:
 
 | Block | Ansatz | Begründung |
 |---|---|---|
-| Datenbankservices | 15 % des Compute-Werts | Datenbanken laufen typischerweise auf einem Teil der Umgebung; in der Cloud höher wegen Managed-Service-Aufschlag |
 | Netzwerk | 600 €/VM CapEx + 120 €/VM/Jahr OpEx on-prem · in der Cloud zusätzlich Egress-Anteil | Switching, Anbindung, Load Balancing. CapEx zum 11.9.2026 um 20 % angehoben: Dell'Oro beziffert Campus-Switch-Listenpreise für Q2/2026 mit +19 % ggü. Vorjahr und erwartet 2026 insgesamt über 20 % Aufschlag bei Netzwerk-Hardware wegen derselben Speicherpreiskrise wie bei Servern, nur schwächer ausgeprägt (https://convergedigest.com/delloro-ai-component-shortages-campus-switch-prices-2q-2026/, https://www.networkworld.com/article/4113772/samsung-warns-of-memory-shortages-driving-industry-wide-price-surge-in-2026.html) |
 | Backup / DR | 12 % des Storage-Werts | Zweitkopie, Medien, Zweitstandort |
 | Wartung und Support | 12 % des Hardware-CapEx je Jahr | Übliche Größenordnung für Herstellersupport |
