@@ -117,12 +117,15 @@ export const GLOBALS = {
 
   /**
    * Anschaffungspreis je Virtualisierungshost.
-   * [mittel] Dell PowerEdge Listenpreise DE 14.543–30.135 €.
-   * Mitte der Spanne: ein Host, der 20 VMs trägt, braucht entsprechend RAM
-   * und liegt nicht am unteren Rand der Preisliste. Listenpreis ≠ Einkauf,
-   * deshalb nicht das obere Ende.
+   * [mittel] Basis: Dell PowerEdge Listenpreise DE 14.543–30.135 €, Mitte
+   * der Spanne 24.000 €. Aufgeschlagen um 30 % wegen der RAM-Preiskrise
+   * 2026: Dell hat die PowerEdge-Listenpreise zum 30. März 2026 angehoben,
+   * bei speicherintensiven Konfigurationen — und ein Virtualisierungshost
+   * für 20 VMs ist speicherintensiv — um bis zu 30 %. Details in
+   * SOURCES.md, Abschnitt 2. Listenpreis ≠ Einkauf, deshalb kein weiterer
+   * Aufschlag on top.
    */
-  hostCost: 24_000,
+  hostCost: 32_000,
 
   /** Nutzungsdauer der Serverhardware in Jahren. [gut] Marktüblich. */
   hostUsefulLife: 5,
@@ -270,16 +273,20 @@ export const BLOCK_COEFFICIENTS: Record<string, BlockCoefficient> = {
     onprem: {
       capex: {
         /**
-         * [schwach] 1.440 €/TB **nutzbar**.
-         * Herleitung: 900 €/TB Rohkapazität (Anhaltspunkte: NetApp ASA
-         * effektiv 55–130 $/TB reine Medien, Enterprise-NVMe 300–1.172 $/TB,
-         * zuzüglich Controller, Redundanz, Gehäuse und Erstsupport)
-         * × Faktor 1,6 für RAID-Overhead, Snapshot-Reserve und
-         * Wachstumsspielraum. Wer 120 TB nutzen will, kauft deutlich mehr.
-         * ACHTUNG: 2026 extrem volatil, Vorproduktkosten +300–900 %.
-         * Dieser Wert veraltet schneller als jeder andere in dieser Tabelle.
+         * [schwach] 2.800 €/TB **nutzbar**.
+         * Herleitung: bisheriger Wert 1.440 €/TB, verdoppelt wegen der
+         * NAND-Preiskrise 2026: Enterprise-SSD-Vertragspreise laut
+         * TrendForce/Gartner 2026 um 50–200 %, ein konkretes 30-TB-Modell
+         * laut Marktbeobachtung von rund 3.062 $ (Q2/2025) auf rund
+         * 10.950 $ (Q1/2026) — +257 % auf die reinen Medien. Nur zur Hälfte
+         * durchgereicht, weil Controller, Gehäuse und Support (im
+         * bisherigen Wert bereits mit Faktor 1,6 enthalten) von der
+         * Speicherpreiskrise weniger betroffen sind als die Medien selbst.
+         * Details und Quellen in SOURCES.md, Abschnitt 5.
+         * ACHTUNG: weiterhin extrem volatil. Dieser Wert veraltet schneller
+         * als jeder andere in dieser Tabelle.
          */
-        unitCost: 1_440,
+        unitCost: 2_800,
         basis: 'per-tb',
         usefulLifeYears: 5,
         noteTemplate: 'Speichersystem, bezogen auf nutzbare Kapazität:',
@@ -308,9 +315,17 @@ export const BLOCK_COEFFICIENTS: Record<string, BlockCoefficient> = {
   /* ── Netzwerk ─────────────────────────────────────────────────────── */
   network: {
     onprem: {
-      // [schwach] Modellannahme: Switching und Anbindung.
+      /**
+       * [schwach] Modellannahme: Switching und Anbindung, Basis 500 €/VM.
+       * Aufgeschlagen um 20 % wegen der Speicherpreiskrise 2026: auch
+       * Netzwerk-Hardware braucht Arbeitsspeicher, wenn auch deutlich
+       * weniger als Server. Dell'Oro beziffert die Campus-Switch-
+       * Listenpreise für Q2/2026 mit +19 % gegenüber dem Vorjahr und
+       * erwartet für 2026 insgesamt über 20 % Aufschlag bei
+       * Netzwerk-Hardware. Details in SOURCES.md, Abschnitt 2.
+       */
       capex: {
-        unitCost: 500,
+        unitCost: 600,
         basis: 'per-vm',
         usefulLifeYears: 5,
         noteTemplate: 'Switching und Netzwerkanbindung:',

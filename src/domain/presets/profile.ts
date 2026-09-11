@@ -16,7 +16,7 @@ export function emptyProfile(): Profile {
     vmCount: 0,
     employeeCount: null,
     storageTB: null,
-    refreshYear: 3,
+    refreshYear: 1,
     operatingModel: 'own-dc',
     regulation: 'standard',
     vmsPerHost: null,
@@ -28,15 +28,18 @@ export function emptyProfile(): Profile {
  * Demo-Profil für den ersten Eindruck.
  *
  * Bewusst der typische Entscheidungsfall: mittelgroße Umgebung, deren
- * Hardware in Jahr 3 ersetzt werden müsste. Damit entsteht ein echter
- * Break-even statt eines trivialen Ergebnisses.
+ * Hardware jetzt ersetzt werden müsste. Genau dieser Anlass — der
+ * anstehende Refresh — ist im Kundengespräch der Grund, warum überhaupt
+ * verglichen wird. On-Prem-Ersatzinvestition und Cloud-Migration fallen
+ * damit im selben Jahr an, statt dass On-Prem einen strukturellen
+ * Zeitvorsprung bekommt.
  */
 export function demoProfile(): Profile {
   return {
     vmCount: 150,
     employeeCount: null,
     storageTB: 120,
-    refreshYear: 3,
+    refreshYear: 1,
     operatingModel: 'own-dc',
     regulation: 'elevated',
     vmsPerHost: null,
