@@ -6,13 +6,20 @@ Werkzeug **im Kundengespräch** einsetzt.
 
 ## Absprachen mit dem Nutzer
 
-**Kein Push ohne ausdrückliche Freigabe.** Jeder Push auf den Branch löst ein
-automatisches Deployment aus — der Push *ist* die Live-Änderung. Lokal
-arbeiten, testen, zeigen, warten. Auch bei Kleinigkeiten wie Tippfehlern oder
-Dokumentation: immer fragen.
+**Direkt auf dem Live-Branch arbeiten, Push ohne Rückfrage erlaubt** (seit
+13. September 2026 — davor galt: immer fragen). Es gibt keinen separaten
+Feature-Branch und keinen PR-Umweg mehr: Änderungen gehen direkt auf
+`claude/tco-calculator-webapp-nps1ww`, jeder Push löst automatisch ein
+Deployment aus — der Push *ist* die Live-Änderung.
+
+Gerade weil das ohne Freigabe passiert, vor jedem Push zwingend: `npm test`,
+`npm run build`, `npx eslint .` müssen grün sein, bei UI-Änderungen zusätzlich
+die laufende App ansehen. Ein Push, der CI bricht oder die Seite sichtbar
+kaputt macht, ist live und trifft den Nutzer im Kundengespräch — das ist der
+Preis der Freigabe und nicht verhandelbar.
 
 Ohne Rückfrage erlaubt: lesen, bauen, testen, Screenshots, lokale Dateien
-ändern, committen.
+ändern, committen, pushen.
 
 **Sprache:** Deutsch, auch in Code-Kommentaren und Commit-Nachrichten.
 
