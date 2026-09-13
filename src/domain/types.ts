@@ -48,7 +48,7 @@ export type RegulationLevel = 'standard' | 'elevated' | 'high'
 /**
  * Merkmale, die im Erstgespräch erfragt werden.
  *
- * Aus ihnen erzeugt `generateScenarios()` alle zwölf Blöcke. Bewusst so
+ * Aus ihnen erzeugt `generateScenarios()` alle elf Blöcke. Bewusst so
  * wenige Felder, dass sie in einem Telefonat abfragbar sind.
  */
 export interface Profile {

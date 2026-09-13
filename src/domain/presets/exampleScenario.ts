@@ -38,12 +38,6 @@ export const BLOCK_GUIDANCE: Record<string, Guidance> = {
     cloud:
       'Die laufenden Kosten der Rechenleistung, also die Instanzen beziehungsweise virtuellen Maschinen samt zugesicherter Rabatte. Speicher und Datenverkehr stehen in eigenen Blöcken.',
   },
-  database: {
-    onprem:
-      'Dedizierte Datenbankserver und die zugehörigen Lizenzen. Falls die Datenbanklizenzen bereits unter Lizenzen und Software stehen, gehören sie nicht ein zweites Mal hierher.',
-    cloud:
-      'Managed-Datenbankdienste. Der Aufschlag gegenüber einer selbst betriebenen Datenbank bezahlt Sicherung, Hochverfügbarkeit und Patching — also Arbeit, die dafür beim Personal wegfällt.',
-  },
   storage: {
     onprem:
       'Speichersysteme mit Controllern und Redundanz. Entscheidend ist der Unterschied zwischen roher und nutzbarer Kapazität: Wer 120 Terabyte nutzen will, kauft deutlich mehr ein.',

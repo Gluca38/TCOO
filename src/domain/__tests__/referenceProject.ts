@@ -62,6 +62,15 @@ function entry(blockId: string, note: string, capex?: CapexInput, opex?: OpexInp
 
 export function createReferenceProject(): Project {
   const p = createEmptyProject()
+  // Diese Fixture ist bewusst unabhängig vom aktuellen Standardkatalog
+  // (siehe Kommentar oben) — 'database' wurde aus DEFAULT_BLOCKS entfernt,
+  // bleibt hier aber erhalten, damit die eingefrorenen Zahlen unverändert
+  // bleiben.
+  p.blocks = [
+    p.blocks[0],
+    { id: 'database', name: 'Datenbankservices', enabled: true, order: 1 },
+    ...p.blocks.slice(1).map((b) => ({ ...b, order: b.order + 1 })),
+  ]
   p.meta.title = 'Beispiel: Hardware-Refresh vs. Migration in die Public Cloud'
   p.meta.notes =
     'Demonstrationsdaten. Die bestehende Serverlandschaft erreicht in Jahr 3 das Ende der Nutzungsdauer. ' +
